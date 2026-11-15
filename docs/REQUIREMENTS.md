@@ -78,7 +78,7 @@ DSH 的 Agent 能力由**原生 Agent preset** 组合：一个 preset 是一份 
 | NP-15 | 错误与回滚 | P0 | 写失败/激活失败回滚 patch 与 state |
 | NP-16 | 并发写 | P1 | UI 写前同步 generation；过期提示只 warning，不阻塞原生写入 |
 | NP-17 | 浏览器 UI | P0 | 左侧「预设管理」；列表/编辑/新增/恢复/过滤；半屏单滚动容器；过滤顶栏固定 |
-| NP-18 | 会话/身份一致性 | P0 | 原生 id 是 config.id 与 Session header 身份；无平行 id；新建 id 小写兼容 DSH-IM |
+| NP-18 | 会话/身份一致性 | P0 | 原生 id 是 config.id 与 Session header 身份；无平行 id；新建 id 小写字母、数字、`-` |
 | NP-19 | 空/加载/损坏/错误状态 | P1 | 明确 UI |
 | NP-20 | 管理 API 安全 | P0 | owner-only + CSRF header + body limit |
 | NP-21 | 测试与真实实例验收 | P0 | 自动测试 + 真实 DSH profile/Chrome |

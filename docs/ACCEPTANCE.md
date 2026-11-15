@@ -254,7 +254,8 @@ await ctx.get('agentPresets').mount(agentCtx, 'standard')
 | 列表 | ✅ 显示 standard/ptc/minimal/cordis（以及测试中新增的自定义 preset）；默认/内置/已覆盖/自定义徽标 |
 | 人格 tab | ✅ 显示 prefix/complete/includeRuntimeContext；页面内包含两项的中文解释（complete 抑制其他 section；includeRuntimeContext 注入工作目录/沙箱/审批等） |
 | 预设 id 说明 | ✅ 字段旁 ? 图标；hover/focus 显示固定定位气泡，点击可固定；自动夹在视口内并放在字段下方，不被 overflow 截断 |
-| 新 preset ID | ✅ 新建仅允许小写字母/数字/`-`；`Aemeath` 被拒绝，`aemeath` 创建成功；已有 legacy ID 仍可编辑 |
+| 新 preset ID | ✅ 新建仅允许小写字母/数字/`-`；`Aemeath` 被拒绝，`aemeath` 创建成功；已有 legacy ID 仍可编辑；页面文案仅显示规则 |
+| 输入焦点 | ✅ 普通输入框只变边框色；搜索框由 `.dspm_search:focus-within` 整体高亮，input outline-style=none，搜索高亮与容器尺寸一致 |
 | 插件组合 tab | ✅ 显示原生插件行与开关；不含 YAML；只有 tabBody 一条滚动条 |
 | 高级编辑 tab | ✅ 独立 tab，完整 entry-list YAML；实测 textarea scrollHeight 2180 / clientHeight 173，`overflow-y:auto`，`scrollTop` 可置 200 |
 | 保存来源 | ✅ 默认“结构化行”；YAML 输入后自动切“YAML”、dirty 出现、保存按钮启用；切回结构化保留 dirty，按钮 active/徽标同步 |
