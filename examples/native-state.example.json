@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "generation": 3,
+  "definitions": {
+    "standard": {
+      "configId": "standard",
+      "rowId": "preset-standard",
+      "mode": "override",
+      "name": "Standard X",
+      "description": "团队标准组合，关闭了 apply_patch",
+      "order": 1,
+      "baseName": "standard",
+      "baseDescription": "",
+      "baseOrder": 1,
+      "plugins": [
+        {
+          "id": "persona",
+          "name": "@deepseek-ai/dsh-persona",
+          "config": {
+            "prefix": "You are a coding agent powered by the {{model}} model."
+          }
+        },
+        {
+          "id": "tool-bash",
+          "name": "@deepseek-ai/dsh-tool-bash",
+          "disabled": { "__jsExpr": "process.platform === 'win32'" }
+        }
+      ],
+      "updatedAt": "2026-11-14T00:00:00.000Z"
+    }
+  },
+  "overlays": {
+    "standard": {
+      "tools": {
+        "mode": "deny",
+        "allow": [],
+        "deny": ["bash", "write", "edit", "apply_patch"]
+      },
+      "enabled": true,
+      "updatedAt": "2026-11-14T00:00:00.000Z"
+    }
+  },
+  "updatedAt": 1794666000000
+}

@@ -1,0 +1,10 @@
+node_modules/
+.e2e-home/
+.e2e-results.json
+.tmp-*
+*.log
+*.tgz
+.DS_Store
+coverage/
+test-results/
+.ssh/

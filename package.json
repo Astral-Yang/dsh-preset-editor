@@ -1,0 +1,77 @@
+{
+  "name": "dsh-preset-editor",
+  "version": "0.1.0",
+  "description": "Native Agent preset editor for DeepSeek Harness: edit/add built-in presets from a sidebar page, compose personas and plugin rows, layer per-preset tool filters, with automatic backups and rollback.",
+  "license": "MIT",
+  "author": "Diana <1072486605@qq.com>",
+  "private": false,
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/*.js",
+    "lib/client.js",
+    "cordis.patch.yml",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "docs",
+    "examples",
+    "scripts"
+  ],
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "preset",
+    "persona",
+    "system-prompt",
+    "tool-permissions"
+  ],
+  "engines": {
+    "node": ">=20.11",
+    "dsh": ">=0.2.2-rc.1 <0.3.0-0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-session",
+        "@deepseek-ai/dsh-client-ui-workspace"
+      ]
+    },
+    "compatibility": {
+      "dshReleases": {
+        "0.2.2-rc.1": "compatible"
+      }
+    }
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "js-yaml": "^4.3.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Astral-Yang/dsh-preset-editor.git"
+  },
+  "homepage": "https://github.com/Astral-Yang/dsh-preset-editor#readme",
+  "bugs": {
+    "url": "https://github.com/Astral-Yang/dsh-preset-editor/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

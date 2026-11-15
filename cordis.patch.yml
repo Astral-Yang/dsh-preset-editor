@@ -1,0 +1,30 @@
+# dsh-preset-editor bundle layer.
+#
+# A profile that lists this package in `dsh.profile.bundles` gets this one Host
+# loader entry. The browser half is declared by package.json's `dsh.client` and
+# is served by dsh-client-modules for the same entry.
+#
+# Values here are the deployment configuration. Presets themselves are user data
+# and live in `$DSH_HOME/preset-manager/native.json`; the UI writes there and to
+# the managed block in the profile's cordis.patch.yml.
+- insert:
+    - id: preset-manager
+      name: dsh-preset-editor
+      config:
+        # Optional explicit state file. Default:
+        #   $DSH_HOME/preset-manager/native.json
+        stateFile: ''
+        # Register the harmless `preset_manager_probe` tool and expose the
+        # authenticated self-test route. Intended for acceptance tests.
+        diagnostics: false
+        # How long tool-registration bursts are coalesced before live agents
+        # recompute their visibility restrictions.
+        refreshDebounceMs: 250
+        maxPresets: 100
+        maxPersonaChars: 20000
+        maxSessionAssignments: 5000
+        # Automatic backup before every native.json / profile-patch write.
+        backup: true
+        # Default: $DSH_HOME/preset-manager/backups
+        backupDir: ''
+        backupKeep: 20
