@@ -332,3 +332,48 @@ test('automatic backups can be disabled at runtime', async () => {
     await rm(dir, { recursive: true, force: true })
   }
 })
+
+test('backup snapshots group a patch and native file produced together', async () => {
+  const { NativeStore, NativePresetManager } = await import('../lib/native.js')
+  const dir = await mkdtemp(join(tmpdir(), 'dspm-native-snapshot-'))
+  try {
+    const backupDir = join(dir, 'backups')
+    await (await import('node:fs/promises')).mkdir(backupDir, { recursive: true })
+    await writeFile(join(backupDir, 'patch-2026-11-15T10-00-00-000Z-g1.yml'), '- id: x\n')
+    await writeFile(join(backupDir, 'native-2026-11-15T10-00-00-001Z-g1.json'), '{}')
+    const store = new NativeStore({ file: join(dir, 'native.json'), limits: { maxPresets: 10, maxPersonaChars: 1000, maxSessionAssignments: 10 }, logger: { info() {}, warn() {}, error() {}, debug() {} } })
+    store.loadSync()
+    const fake = { get(name) { if (name === 'profileContext') return { patchPath: join(dir, 'cordis.patch.yml') }; return undefined }, on() {} }
+    const native = new NativePresetManager({ ctx: fake, store, logger: { info() {}, warn() {}, error() {}, debug() {} }, config: { backupDir, backupKeep: 20 } })
+    const snapshots = await native.listSnapshots()
+    assert.equal(snapshots.length, 1)
+    assert.equal(snapshots[0].files.length, 2)
+    assert.deepEqual(snapshots[0].kinds.sort(), ['native', 'patch'])
+    assert.ok(snapshots[0].bytes > 0)
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test('snapshot grouping prefers the native generation immediately before each patch', async () => {
+  const { NativeStore, NativePresetManager } = await import('../lib/native.js')
+  const dir = await mkdtemp(join(tmpdir(), 'dspm-native-snapshot-gen-'))
+  try {
+    const backupDir = join(dir, 'backups')
+    await (await import('node:fs/promises')).mkdir(backupDir, { recursive: true })
+    await writeFile(join(backupDir, 'patch-2026-11-15T10-00-00-000Z-g1.yml'), 'a')
+    await writeFile(join(backupDir, 'native-2026-11-15T10-00-00-001Z-g1.json'), 'b')
+    await writeFile(join(backupDir, 'patch-2026-11-15T10-00-00-002Z-g2.yml'), 'c')
+    const store = new NativeStore({ file: join(dir, 'native.json'), limits: { maxPresets: 10, maxPersonaChars: 1000, maxSessionAssignments: 10 }, logger: { info() {}, warn() {}, error() {}, debug() {} } })
+    store.loadSync()
+    const fake = { get(name) { if (name === 'profileContext') return { patchPath: join(dir, 'cordis.patch.yml') }; return undefined }, on() {} }
+    const native = new NativePresetManager({ ctx: fake, store, logger: { info() {}, warn() {}, error() {}, debug() {} }, config: { backupDir, backupKeep: 20 } })
+    const snapshots = await native.listSnapshots()
+    assert.equal(snapshots.length, 2)
+    const paired = snapshots.find((snapshot) => snapshot.files.length === 2)
+    assert.deepEqual(paired.files.sort(), ['native-2026-11-15T10-00-00-001Z-g1.json', 'patch-2026-11-15T10-00-00-002Z-g2.yml'])
+    assert.deepEqual(snapshots.find((snapshot) => snapshot.files.length === 1).files, ['patch-2026-11-15T10-00-00-000Z-g1.yml'])
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})

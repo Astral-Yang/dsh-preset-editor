@@ -23,7 +23,7 @@
 | HMR 实时重组 | ✅ | patch 写入后等待 roster 更新；超时回滚 |
 | 无 HMR 部署 | ✅ | 返回 `restart-required`，不伪装成立即生效 |
 | 真实 Web UI | ✅ | 左侧「预设管理」；真实实例已截图验收 |
-| 测试 | ✅ | 68 个测试（含真实 Harness 集成） |
+| 测试 | ✅ | 70 个测试（含真实 Harness 集成） |
 
 已验证 DSH：`@deepseek-ai/dsh@0.2.2-rc.1`，Node `24.x`。
 
@@ -106,10 +106,11 @@ profile 的 `cordis.patch.yml` 对相同 id 的配置是整行替换，覆盖时
 - 默认开启，用户无感知：每次写 profile patch 前保存旧 patch，每次写 `native.json` 前保存旧状态。
 - 文件：`backups/patch-<ISO>-g<generation>.yml`、`backups/native-<ISO>-g<generation>.json`。
 - 保留最近 `backupKeep` 份（默认 20），按修改时间裁剪。
-- 页面头部显示“自动备份：开启 · N 份（保留 N）”；点击“备份记录”查看文件、时间、大小，并可点击“回滚”。
+- 页面头部显示“自动备份：开启 · N 份（保留 N）”；点击“备份记录”查看快照（一次操作产生的 patch/native 合并为一条，按系统时间命名），并可点击“回滚”。
+- 备份弹窗可开关自动备份并调整保留份数（1–500）。
 - 备份记录弹窗内可直接关闭/开启自动备份；关闭后停止生成新备份，已有备份保留。profile 配置 `backup: false` 是硬关闭，UI 不能重新开启。
 - 备份时间按当前系统时区显示；大小使用 B / KB / MB，不显示原始字节数。
-- 回滚会先备份当前版本，再恢复所选 patch 或 native 快照；恢复 patch 时同步托管定义，恢复 native 时重建 patch 托管块，避免两边不一致。
+- 回滚会先备份当前版本，再按 native → patch 顺序恢复所选快照；恢复 patch 时同步托管定义，恢复 native 时重建 patch 托管块，避免两边不一致。
 - API：`GET /api/preset-manager/native/backups`。
 
 ---
@@ -241,7 +242,8 @@ x-dsh-preset-action: 1
 |---|---|---|
 | GET | `/api/preset-manager/native?catalog=1` | 原生 roster + 每个组合 + 工具目录 + overlays + backup 状态 |
 | GET | `/api/preset-manager/native/backups` | 自动备份记录 |
-| POST | `/api/preset-manager/native/backups/restore` | 回滚到指定备份（`{ name }`） |
+| POST | `/api/preset-manager/native/backups/restore` | 回滚到指定快照（`{ names }`） |
+| PUT | `/api/preset-manager/native/backups/policy` | 开关自动备份 / 调整保留份数（`{ enabled?, keep? }`） |
 | POST/PUT/DELETE | `/api/preset-manager/native` | 新建 / 覆盖 / 恢复或删除 |
 | PUT/DELETE | `/api/preset-manager/native/overlay` | 设置 / 移除工具过滤 |
 

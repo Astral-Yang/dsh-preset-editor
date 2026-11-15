@@ -9,7 +9,11 @@ function harness() {
   const native = {
     store: { generation: 2, warnings: [] },
     backupEnabled() { return true },
+    backupKeep() { return 20 },
+    async listSnapshots() { return [] },
+    async restoreSnapshot(names) { calls.push(['restoreSnapshot', names]); return { restored: names, kind: 'patch', application: 'applied', generation: 4 } },
     async setBackupEnabled(enabled) { calls.push(['setBackupEnabled', enabled]); return { enabled } },
+    async setBackupKeep(keep) { calls.push(['setBackupKeep', keep]); return { keep } },
     async listBackups() { return [] },
     async restoreBackup(name) { calls.push(['restore', name]); return { restored: name, kind: 'patch', application: 'applied', generation: 4 } },
     async list() { return { presets: [{ id: 'standard', name: 'standard' }], defaultId: 'standard', warnings: [] } },
@@ -76,8 +80,8 @@ test('native backup restore requires the action header and dispatches', async ()
   assert.equal(denied.status, 403)
   const restored = await h.call('POST', NATIVE_ROUTES.restore, { body: { name: 'patch-x.yml' } })
   assert.equal(restored.status, 200)
-  assert.equal(h.calls[0][0], 'restore')
-  assert.equal(restored.body.restored, 'patch-x.yml')
+  assert.equal(h.calls[0][0], 'restoreSnapshot')
+  assert.equal(restored.body.restored[0], 'patch-x.yml')
 })
 
 test('native backup policy can be toggled', async () => {
@@ -89,6 +93,10 @@ test('native backup policy can be toggled', async () => {
   assert.equal(off.body.enabled, true)
   assert.equal(h.calls[0][0], 'setBackupEnabled')
   assert.equal(h.calls[0][1], false)
+  const kept = await h.call('PUT', NATIVE_ROUTES.policy, { body: { keep: 5 } })
+  assert.equal(kept.status, 200)
+  assert.equal(h.calls[1][0], 'setBackupKeep')
+  assert.equal(h.calls[1][1], 5)
 })
 
 test('native invalid bodies map to structured errors', async () => {
