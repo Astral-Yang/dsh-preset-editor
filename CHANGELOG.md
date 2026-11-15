@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- 新建 preset ID 限制为小写字母、数字和 `-`，与 DSH-IM 5.x 的 Agent Preset 校验一致；已有 legacy ID（含大写/其他字符）仍可编辑，不会被强制迁移。
+- 修复新 preset ID 与 Loader row id 碰撞检查中的初始化顺序问题。
+- 测试：66 / 66 通过。
+
 ## 0.1.1 — 2026-11-15
 
 - 修复 Windows 平台测试兼容性：0600 文件权限断言仅在 POSIX 执行；原子写失败测试改用“目标路径为目录”的可移植失败方式，不再依赖 chmod。

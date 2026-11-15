@@ -23,7 +23,7 @@
 | HMR 实时重组 | ✅ | patch 写入后等待 roster 更新；超时回滚 |
 | 无 HMR 部署 | ✅ | 返回 `restart-required`，不伪装成立即生效 |
 | 真实 Web UI | ✅ | 左侧「预设管理」；真实实例已截图验收 |
-| 测试 | ✅ | 65 个测试（含真实 Harness 集成） |
+| 测试 | ✅ | 66 个测试（含真实 Harness 集成） |
 
 已验证 DSH：`@deepseek-ai/dsh@0.2.2-rc.1`，Node `24.x`。
 
@@ -159,7 +159,7 @@ profile 的 `cordis.patch.yml` 对相同 id 的配置是整行替换，覆盖时
 
 点击“新增原生预设”：
 
-- id：唯一，作为 `config.id` 与 Session header 身份，创建后不可改。编辑页字段旁有 `?` 图标，悬浮/点击显示说明气泡；气泡使用 fixed 定位并自动夹在视口内，不会被编辑区 overflow 截断。
+- id：唯一，作为 `config.id` 与 Session header 身份，创建后不可改。新建 id 仅允许小写字母、数字和 `-`（兼容 DSH-IM）；已有 legacy id 仍可编辑。编辑页字段旁有 `?` 图标，悬浮/点击显示说明气泡；气泡使用 fixed 定位并自动夹在视口内，不会被编辑区 overflow 截断。
 - 从现有 preset 复制组合（推荐从 `standard` 开始）或空组合。
 - 保存会向 profile patch 的托管块追加 `- insert:` 声明；DSH 原生 roster 立即出现该 preset。
 

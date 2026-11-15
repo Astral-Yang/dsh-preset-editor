@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { buildManagedBlock, extractManagedDefinitions, mergePatchText, parsePluginsYaml, validatePlugins } from '../lib/native.js'
+import { PresetError } from '../lib/store.js'
 
 const plugins = `- id: persona
   name: '@deepseek-ai/dsh-persona'
@@ -221,7 +222,7 @@ test('a managed new preset stays an insert declaration after it appears in the r
       get(name) {
         if (name === 'profileContext') return { patchPath }
         if (name === 'agentPresets') return { defaultId: null, async list() { return roster } }
-        if (name === 'loader') return { entries: () => [] }
+        if (name === 'loader') return { entries: () => [{ options: { id: 'preset-standard', name: '@deepseek-ai/dsh-agent-preset', config: { id: 'standard' } } }] }
         return undefined
       },
       on() {},
@@ -271,6 +272,37 @@ test('restoreBackup rolls a patch or native snapshot back with new backups', asy
     assert.equal(nativeResult.application, 'restart-required')
     assert.equal(store.getState().definitions.standard.mode, 'override')
     assert.match(await readFile(patchPath, 'utf8'), /id: preset-standard/)
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+
+test('new preset ids must be lowercase and DSH-IM compatible', async () => {
+  const { NativeStore, NativePresetManager } = await import('../lib/native.js')
+  const dir = await mkdtemp(join(tmpdir(), 'dspm-native-id-'))
+  try {
+    const patchPath = join(dir, 'cordis.patch.yml')
+    await writeFile(patchPath, '[]\n')
+    const store = new NativeStore({ file: join(dir, 'native.json'), limits: { maxPresets: 10, maxPersonaChars: 1000, maxSessionAssignments: 10 }, logger: { info() {}, warn() {}, error() {}, debug() {} } })
+    store.loadSync()
+    const fake = {
+      get(name) {
+        if (name === 'profileContext') return { patchPath }
+        if (name === 'agentPresets') return { defaultId: null, async list() { return [] } }
+        if (name === 'loader') return { entries: () => [] }
+        return undefined
+      },
+      on() {},
+    }
+    const native = new NativePresetManager({ ctx: fake, store, logger: { info() {}, warn() {}, error() {}, debug() {} }, config: {} })
+    await assert.rejects(
+      native.save({ id: 'Aemeath', name: 'Aemeath', plugins: definition.plugins }, 0, { createOnly: true }),
+      (error) => error instanceof PresetError && error.code === 'INVALID_ID',
+    )
+    const saved = await native.save({ id: 'aemeath', name: 'Aemeath', plugins: definition.plugins }, 0, { createOnly: true })
+    assert.equal(saved.preset.id, 'aemeath')
+    assert.equal(store.getState().definitions.aemeath.mode, 'create')
   } finally {
     await rm(dir, { recursive: true, force: true })
   }

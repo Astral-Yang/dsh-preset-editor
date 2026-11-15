@@ -14,7 +14,7 @@
 | 可安装插件项目 | ✅ `package.json` / `cordis.patch.yml` / `lib/*` |
 | 原生 preset 列表/编辑/新增/恢复 | ✅ 已在真实 profile 验证 |
 | 逐工具过滤叠加 | ✅ 真实 Agent probe 验证 |
-| 自动化测试 | ✅ 65/65 通过 |
+| 自动化测试 | ✅ 66/66 通过 |
 | 真实 Web Profile + Chrome UI | ✅ 已截图 |
 | 文档 | ✅ README / REQUIREMENTS / ACCEPTANCE |
 
@@ -39,8 +39,8 @@ npm test
 结果：
 
 ```text
-tests 65
-pass 65
+tests 66
+pass 66
 fail 0
 skipped 0
 ```
@@ -51,7 +51,7 @@ skipped 0
 
 | 文件 | 覆盖 | 结果 |
 |---|---|---|
-| `test/native.test.js` | `!!js` YAML round-trip、托管块合并/替换、结构校验、NativeStore、patch 写入、reset、自动备份、stale 容错、orphan 修复、insert mode 保持、备份回滚 | 12/12 |
+| `test/native.test.js` | `!!js` YAML round-trip、托管块合并/替换、结构校验、NativeStore、patch 写入、reset、自动备份、stale 容错、orphan 修复、insert mode 保持、备份回滚、ID 限制 | 13/13 |
 | `test/schema.test.js` | 旧 overlay 状态归一化/校验 | 10/10 |
 | `test/store.test.js` | 原子写/0600/损坏/并发/写失败/未来版本 | 6/6 |
 | `test/manager.test.js` | 旧 overlay CRUD/优先级/回退 | 13/13 |
@@ -254,6 +254,7 @@ await ctx.get('agentPresets').mount(agentCtx, 'standard')
 | 列表 | ✅ 显示 standard/ptc/minimal/cordis（以及测试中新增的自定义 preset）；默认/内置/已覆盖/自定义徽标 |
 | 人格 tab | ✅ 显示 prefix/complete/includeRuntimeContext；页面内包含两项的中文解释（complete 抑制其他 section；includeRuntimeContext 注入工作目录/沙箱/审批等） |
 | 预设 id 说明 | ✅ 字段旁 ? 图标；hover/focus 显示固定定位气泡，点击可固定；自动夹在视口内并放在字段下方，不被 overflow 截断 |
+| 新 preset ID | ✅ 新建仅允许小写字母/数字/`-`；`Aemeath` 被拒绝，`aemeath` 创建成功；已有 legacy ID 仍可编辑 |
 | 插件组合 tab | ✅ 显示原生插件行与开关；不含 YAML；只有 tabBody 一条滚动条 |
 | 高级编辑 tab | ✅ 独立 tab，完整 entry-list YAML；实测 textarea scrollHeight 2180 / clientHeight 173，`overflow-y:auto`，`scrollTop` 可置 200 |
 | 保存来源 | ✅ 默认“结构化行”；YAML 输入后自动切“YAML”、dirty 出现、保存按钮启用；切回结构化保留 dirty，按钮 active/徽标同步 |
@@ -302,7 +303,7 @@ await ctx.get('agentPresets').mount(agentCtx, 'standard')
 | NP-18 身份一致 | ✅ | `config.id` / Session header / roster 同一 id |
 | NP-19 空/加载/错误 | ⚠️ 部分 | 代码有；未逐一截图断网/500 |
 | NP-20 API 安全 | ✅ | owner-only + CSRF；HTTP 测试 |
-| NP-21 测试/真实实例 | ✅ | 65 测试 + 真实 profile |
+| NP-21 测试/真实实例 | ✅ | 66 测试 + 真实 profile |
 | NP-22 无核心修改 | ✅ | 仅 profile patch / public services |
 
 ---
