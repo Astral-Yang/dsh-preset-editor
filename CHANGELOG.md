@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 — 2026-11-15
 
 - 新建 preset ID 限制为小写字母、数字和 `-`，与 DSH-IM 5.x 的 Agent Preset 校验一致；已有 legacy ID（含大写/其他字符）仍可编辑，不会被强制迁移。
 - 修复新 preset ID 与 Loader row id 碰撞检查中的初始化顺序问题。

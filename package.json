@@ -1,6 +1,6 @@
 {
   "name": "dsh-preset-editor",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Native Agent preset editor for DeepSeek Harness: edit/add built-in presets from a sidebar page, compose personas and plugin rows, layer per-preset tool filters, with automatic backups and rollback.",
   "license": "MIT",
   "author": "Diana <1072486605@qq.com>",
