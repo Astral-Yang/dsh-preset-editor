@@ -4,6 +4,7 @@
 
 - 修复 Windows 平台测试兼容性：0600 文件权限断言仅在 POSIX 执行；原子写失败测试改用“目标路径为目录”的可移植失败方式，不再依赖 chmod。
 - 发布工作流改为在推送 `v*` tag 时触发，支持 `workflow_dispatch`；继续使用 npm Trusted Publishing + provenance。
+- CI 在测试前安装 npm 依赖（`npm install`），确保发布工作流在干净 checkout 中可运行。
 - 测试：65 / 65 通过。
 
 ## 0.1.0 — 2026-11-15
