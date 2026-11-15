@@ -8,6 +8,8 @@ function harness() {
   const calls = []
   const native = {
     store: { generation: 2, warnings: [] },
+    backupEnabled() { return true },
+    async setBackupEnabled(enabled) { calls.push(['setBackupEnabled', enabled]); return { enabled } },
     async listBackups() { return [] },
     async restoreBackup(name) { calls.push(['restore', name]); return { restored: name, kind: 'patch', application: 'applied', generation: 4 } },
     async list() { return { presets: [{ id: 'standard', name: 'standard' }], defaultId: 'standard', warnings: [] } },
@@ -39,7 +41,7 @@ function harness() {
 
 test('native routes combine methods on one path and list state', async () => {
   const h = harness()
-  assert.equal(h.routes.length, 4)
+  assert.equal(h.routes.length, 5)
   const state = await h.call('GET', NATIVE_ROUTES.native + '?catalog=1', { write: false })
   assert.equal(state.status, 200)
   assert.equal(state.body.presets[0].id, 'standard')
@@ -76,6 +78,17 @@ test('native backup restore requires the action header and dispatches', async ()
   assert.equal(restored.status, 200)
   assert.equal(h.calls[0][0], 'restore')
   assert.equal(restored.body.restored, 'patch-x.yml')
+})
+
+test('native backup policy can be toggled', async () => {
+  const h = harness()
+  const denied = await h.call('PUT', NATIVE_ROUTES.policy, { body: { enabled: false }, write: false })
+  assert.equal(denied.status, 403)
+  const off = await h.call('PUT', NATIVE_ROUTES.policy, { body: { enabled: false } })
+  assert.equal(off.status, 200)
+  assert.equal(off.body.enabled, true)
+  assert.equal(h.calls[0][0], 'setBackupEnabled')
+  assert.equal(h.calls[0][1], false)
 })
 
 test('native invalid bodies map to structured errors', async () => {

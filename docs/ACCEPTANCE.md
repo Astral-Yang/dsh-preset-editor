@@ -14,7 +14,7 @@
 | 可安装插件项目 | ✅ `package.json` / `cordis.patch.yml` / `lib/*` |
 | 原生 preset 列表/编辑/新增/恢复 | ✅ 已在真实 profile 验证 |
 | 逐工具过滤叠加 | ✅ 真实 Agent probe 验证 |
-| 自动化测试 | ✅ 66/66 通过 |
+| 自动化测试 | ✅ 68/68 通过 |
 | 真实 Web Profile + Chrome UI | ✅ 已截图 |
 | 文档 | ✅ README / REQUIREMENTS / ACCEPTANCE |
 
@@ -39,8 +39,8 @@ npm test
 结果：
 
 ```text
-tests 66
-pass 66
+tests 68
+pass 68
 fail 0
 skipped 0
 ```
@@ -51,13 +51,13 @@ skipped 0
 
 | 文件 | 覆盖 | 结果 |
 |---|---|---|
-| `test/native.test.js` | `!!js` YAML round-trip、托管块合并/替换、结构校验、NativeStore、patch 写入、reset、自动备份、stale 容错、orphan 修复、insert mode 保持、备份回滚、ID 限制 | 13/13 |
+| `test/native.test.js` | `!!js` YAML round-trip、托管块合并/替换、结构校验、NativeStore、patch 写入、reset、自动备份、stale 容错、orphan 修复、insert mode 保持、备份回滚、ID 限制、运行时备份开关 | 14/14 |
 | `test/schema.test.js` | 旧 overlay 状态归一化/校验 | 10/10 |
 | `test/store.test.js` | 原子写/0600/损坏/并发/写失败/未来版本 | 6/6 |
 | `test/manager.test.js` | 旧 overlay CRUD/优先级/回退 | 13/13 |
 | `test/catalog.test.js` | 工具来源/工作区/作用域/目录 | 6/6 |
 | `test/http.test.js` | 旧 overlay API/CSRF/错误 | 7/7 |
-| `test/native-http.test.js` | 原生 preset API：同路径多方法、CSRF、overlay、备份回滚、错误 | 5/5 |
+| `test/native-http.test.js` | 原生 preset API：同路径多方法、CSRF、overlay、备份回滚、备份策略、错误 | 6/6 |
 | `test/runtime.integration.test.js` | 真实 Harness guard/restrict/prompt/双会话/dispose | 6/6 |
 
 > 旧 overlay 模块保留为回归测试与可复用控制原语；正式 UI/入口已切换到原生版。
@@ -266,6 +266,7 @@ await ctx.get('agentPresets').mount(agentCtx, 'standard')
 | 自动备份 | ✅ 头部显示“自动备份：开启 · N 份（保留 20）”；`GET /native/backups` 返回真实 patch 备份（如 `patch-...-g1.yml`） |
 | 备份回滚 | ✅ 备份记录每行“回滚”；确认后 POST `/backups/restore`；实测 standard 从 `Backup Test` 恢复为 `standard`，并自动生成回滚前备份 |
 | 备份显示 | ✅ 时间按系统本地时区 `YYYY-MM-DD HH:mm:ss`；大小显示 B / KB / MB |
+| 自动备份开关 | ✅ 备份记录弹窗可关闭/开启；关闭后新写入不再生成备份，历史备份保留；profile `backup:false` 为硬关闭 |
 | 未保存切换 | ✅ 使用页面内 modal（不再 `window.confirm`）；显示“继续编辑 / 放弃修改”，实测放弃后切到 ptc |
 | 布局 | ✅ 三栏工作台（272px 预设脊柱 + 编辑器 + 238px 状态轨）；≤1380px 隐藏状态轨，≤980px 单列 |
 | 按钮层级 | ✅ 主操作实心钴蓝 29px/4px；次级/备份/刷新为无边框 ghost；禁用态 42% 透明度；实测 primary `rgb(65,118,230)`、ghost 透明背景 |
@@ -303,7 +304,7 @@ await ctx.get('agentPresets').mount(agentCtx, 'standard')
 | NP-18 身份一致 | ✅ | `config.id` / Session header / roster 同一 id |
 | NP-19 空/加载/错误 | ⚠️ 部分 | 代码有；未逐一截图断网/500 |
 | NP-20 API 安全 | ✅ | owner-only + CSRF；HTTP 测试 |
-| NP-21 测试/真实实例 | ✅ | 66 测试 + 真实 profile |
+| NP-21 测试/真实实例 | ✅ | 68 测试 + 真实 profile |
 | NP-22 无核心修改 | ✅ | 仅 profile patch / public services |
 
 ---

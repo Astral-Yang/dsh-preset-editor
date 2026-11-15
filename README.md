@@ -23,7 +23,7 @@
 | HMR 实时重组 | ✅ | patch 写入后等待 roster 更新；超时回滚 |
 | 无 HMR 部署 | ✅ | 返回 `restart-required`，不伪装成立即生效 |
 | 真实 Web UI | ✅ | 左侧「预设管理」；真实实例已截图验收 |
-| 测试 | ✅ | 66 个测试（含真实 Harness 集成） |
+| 测试 | ✅ | 68 个测试（含真实 Harness 集成） |
 
 已验证 DSH：`@deepseek-ai/dsh@0.2.2-rc.1`，Node `24.x`。
 
@@ -107,6 +107,7 @@ profile 的 `cordis.patch.yml` 对相同 id 的配置是整行替换，覆盖时
 - 文件：`backups/patch-<ISO>-g<generation>.yml`、`backups/native-<ISO>-g<generation>.json`。
 - 保留最近 `backupKeep` 份（默认 20），按修改时间裁剪。
 - 页面头部显示“自动备份：开启 · N 份（保留 N）”；点击“备份记录”查看文件、时间、大小，并可点击“回滚”。
+- 备份记录弹窗内可直接关闭/开启自动备份；关闭后停止生成新备份，已有备份保留。profile 配置 `backup: false` 是硬关闭，UI 不能重新开启。
 - 备份时间按当前系统时区显示；大小使用 B / KB / MB，不显示原始字节数。
 - 回滚会先备份当前版本，再恢复所选 patch 或 native 快照；恢复 patch 时同步托管定义，恢复 native 时重建 patch 托管块，避免两边不一致。
 - API：`GET /api/preset-manager/native/backups`。

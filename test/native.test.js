@@ -307,3 +307,28 @@ test('new preset ids must be lowercase and DSH-IM compatible', async () => {
     await rm(dir, { recursive: true, force: true })
   }
 })
+
+test('automatic backups can be disabled at runtime', async () => {
+  const { NativeStore } = await import('../lib/native.js')
+  const { readdir } = await import('node:fs/promises')
+  const dir = await mkdtemp(join(tmpdir(), 'dspm-native-backup-off-'))
+  try {
+    const backupDir = join(dir, 'backups')
+    const store = new NativeStore({
+      file: join(dir, 'native.json'),
+      limits: { maxPresets: 10, maxPersonaChars: 1000, maxSessionAssignments: 10 },
+      logger: { info() {}, warn() {}, error() {}, debug() {} },
+      backup: { enabled: true, dir: backupDir, keep: 5 },
+    })
+    store.loadSync()
+    await store.transact((draft) => { draft.defaultPresetId = 'a' })
+    await store.transact((draft) => { draft.defaultPresetId = 'b' })
+    await store.setBackupEnabled(false)
+    assert.equal(store.backupEnabled(), false)
+    const before = (await readdir(backupDir)).length
+    await store.transact((draft) => { draft.defaultPresetId = 'c' })
+    assert.equal((await readdir(backupDir)).length, before)
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})

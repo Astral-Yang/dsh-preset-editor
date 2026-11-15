@@ -82,7 +82,7 @@ DSH 的 Agent 能力由**原生 Agent preset** 组合：一个 preset 是一份 
 | NP-19 | 空/加载/损坏/错误状态 | P1 | 明确 UI |
 | NP-20 | 管理 API 安全 | P0 | owner-only + CSRF header + body limit |
 | NP-21 | 测试与真实实例验收 | P0 | 自动测试 + 真实 DSH profile/Chrome |
-| NP-23 | 备份回滚 | P1 | 备份记录可回滚；回滚前自动备份当前版本；patch/native 一致性修复 |
+| NP-23 | 备份回滚 | P1 | 备份记录可回滚；回滚前自动备份当前版本；patch/native 一致性修复；UI 可关闭自动备份 |
 | NP-22 | 无核心修改 | P0 | 仅 profile patch/公开服务 |
 
 ---
