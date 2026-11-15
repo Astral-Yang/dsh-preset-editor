@@ -56,7 +56,7 @@ dsh plugin --profile web add dsh-preset-editor
 > dsh plugin --profile web add dsh-preset-editor
 > ```
 >
-> 状态目录仍是 `$DSH_HOME/preset-manager`，托管块 marker 也保留旧名称，以便沿用已有的定义、overlay 和备份。
+> 新版本的数据/备份目录为 `$DSH_HOME/preset-editor`。当前没有旧版本用户，因此不做旧目录迁移。
 
 重启 profile（或等待 HMR）：
 
@@ -72,7 +72,7 @@ dsh --profile web
 ./scripts/uninstall.sh web
 ```
 
-状态保留在 `$DSH_HOME/preset-manager/native.json`；需要清理时手动删除该目录。profile patch 中的托管块可先通过 UI“恢复内置定义/删除自定义”清掉，或手动删除 `# >>> dsh-preset-manager managed presets` 到 `# <<<` 的块。
+状态保留在 `$DSH_HOME/preset-editor/native.json`；需要清理时手动删除该目录。profile patch 中的托管块可先通过 UI“恢复内置定义/删除自定义”清掉，或手动删除 `# >>> dsh-preset-manager managed presets` 到 `# <<<` 的块。
 
 ---
 
@@ -82,14 +82,14 @@ dsh --profile web
 - id: preset-manager
   name: dsh-preset-editor
   config:
-    stateFile: ''              # 默认 $DSH_HOME/preset-manager/state.json；native.json 与其同目录
+    stateFile: ''              # 默认 $DSH_HOME/preset-editor/state.json；native.json 与其同目录
     diagnostics: false         # 验收探针，默认关闭
     refreshDebounceMs: 250
     maxPresets: 100
     maxPersonaChars: 20000
     maxSessionAssignments: 5000
     backup: true               # 每次写 profile patch / native.json 前自动备份
-    backupDir: ''              # 默认 $DSH_HOME/preset-manager/backups
+    backupDir: ''              # 默认 $DSH_HOME/preset-editor/backups
     backupKeep: 20             # 保留最近 N 份
 ```
 
@@ -269,7 +269,7 @@ x-dsh-preset-action: 1
 
 ## 7. 数据与恢复
 
-- `$DSH_HOME/preset-manager/native.json`：托管定义 + 工具 overlays；模式 `0600`，原子写。
+- `$DSH_HOME/preset-editor/native.json`：托管定义 + 工具 overlays；模式 `0600`，原子写。
 - profile `cordis.patch.yml`：托管块；是 DSH 真正加载的来源。
 - 若 `native.json` 丢失但 patch 托管块仍在，插件启动时会从 patch 恢复定义。
 - 若 patch 被手动清空但 `native.json` 仍存在，UI 会显示 managed 但实际未加载；保存/重置可重新生成托管块。

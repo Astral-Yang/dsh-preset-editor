@@ -89,7 +89,7 @@ DSH 的 Agent 能力由**原生 Agent preset** 组合：一个 preset 是一份 
 
 ## 4. 数据结构
 
-### 4.1 `$DSH_HOME/preset-manager/native.json`
+### 4.1 `$DSH_HOME/preset-editor/native.json`
 
 ```json
 {
@@ -166,7 +166,7 @@ DSH 的 Agent 能力由**原生 Agent preset** 组合：一个 preset 是一份 
 ### 4.3 自动备份策略
 
 - 默认开启：写 profile patch 前备份旧 patch；写 `native.json` 前备份旧状态。
-- 目录：`$DSH_HOME/preset-manager/backups`，可通过 `backupDir` 指定。
+- 目录：`$DSH_HOME/preset-editor/backups`，可通过 `backupDir` 指定。
 - 保留最近 `backupKeep` 份（默认 20），按 mtime 裁剪。
 - 页面头部展示备份状态/数量；“备份记录”弹窗列出文件、系统本地时间、B/KB/MB 大小；API `GET /api/preset-manager/native/backups`。
 - 备份失败只记录 warning，不阻断主写入；主写入失败时回滚 patch/state。

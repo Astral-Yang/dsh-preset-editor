@@ -5,14 +5,14 @@
 # is served by dsh-client-modules for the same entry.
 #
 # Values here are the deployment configuration. Presets themselves are user data
-# and live in `$DSH_HOME/preset-manager/native.json`; the UI writes there and to
+# and live in `$DSH_HOME/preset-editor/native.json`; the UI writes there and to
 # the managed block in the profile's cordis.patch.yml.
 - insert:
     - id: preset-manager
       name: dsh-preset-editor
       config:
         # Optional explicit state file. Default:
-        #   $DSH_HOME/preset-manager/native.json
+        #   $DSH_HOME/preset-editor/native.json
         stateFile: ''
         # Register the harmless `preset_manager_probe` tool and expose the
         # authenticated self-test route. Intended for acceptance tests.
@@ -25,6 +25,6 @@
         maxSessionAssignments: 5000
         # Automatic backup before every native.json / profile-patch write.
         backup: true
-        # Default: $DSH_HOME/preset-manager/backups
+        # Default: $DSH_HOME/preset-editor/backups
         backupDir: ''
         backupKeep: 20

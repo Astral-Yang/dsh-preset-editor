@@ -2,7 +2,7 @@
 # Remove dsh-preset-editor from a DSH profile. The preset state is kept so a
 # reinstall restores the user's data; delete it manually to start clean:
 #
-#   rm -rf "$DSH_HOME/preset-manager"
+#   rm -rf "$DSH_HOME/preset-editor"
 set -euo pipefail
 
 profile="${1:-web}"
@@ -12,4 +12,4 @@ if ! command -v dsh >/dev/null 2>&1; then
 fi
 
 dsh plugin --profile "${profile}" remove dsh-preset-editor
-echo "Removed from profile '${profile}'. State under \$DSH_HOME/preset-manager was kept."
+echo "Removed from profile '${profile}'. State under \$DSH_HOME/preset-editor was kept."

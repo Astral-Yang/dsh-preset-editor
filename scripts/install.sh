@@ -26,4 +26,4 @@ echo "Installing ${here} into profile '${profile}'..."
 dsh plugin --profile "${profile}" add "link:${here}"
 echo
 echo "Installed. Restart the profile (for example: dsh --profile ${profile}) and open Settings -> 预设管理."
-echo "State lives in \$DSH_HOME/preset-manager/state.json and is kept across reinstalls."
+echo "State lives in \$DSH_HOME/preset-editor/native.json and is kept across reinstalls."
