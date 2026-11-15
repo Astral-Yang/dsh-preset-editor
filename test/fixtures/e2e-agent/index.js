@@ -78,7 +78,7 @@ export function apply(ctx, rawConfig) {
 
       const probe = async () => {
         const batch = await ctx.tools.execute({
-          calls: [{ type: 'tool-call', id: `probe-${Date.now()}`, name: 'preset_manager_probe', arguments: '{}' }],
+          calls: [{ type: 'tool-call', id: `probe-${Date.now()}`, name: 'preset_editor_probe', arguments: '{}' }],
           signal: new AbortController().signal,
           agent,
         })
@@ -89,7 +89,7 @@ export function apply(ctx, rawConfig) {
 
       await api.setOverlay(nativePreset, {
         enabled: true,
-        tools: { mode: 'deny', allow: [], deny: ['preset_manager_probe', 'bash'] },
+        tools: { mode: 'deny', allow: [], deny: ['preset_editor_probe', 'bash'] },
       })
       api.refreshAll()
       await new Promise((resolve) => setTimeout(resolve, 300))

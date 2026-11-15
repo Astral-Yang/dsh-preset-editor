@@ -78,7 +78,7 @@ dsh plugin --profile e2e add link:/workspace/dsh-preset-editor/repo/test/fixture
 `cordis.patch.yml` 中加入测试夹具（仅验收用）：
 
 ```yaml
-- id: preset-manager
+- id: preset-editor
   config:
     stateFile: ''
     diagnostics: true
@@ -112,7 +112,7 @@ DSH_HOME=/workspace/dsh-preset-editor/repo/.e2e-home dsh --profile e2e --port 0 
 认证后：
 
 ```text
-GET  /api/preset-manager/native?catalog=1  → {"ok":true,"presets":[...],"catalog":{...}}
+GET  /api/preset-editor/native?catalog=1  → {"ok":true,"presets":[...],"catalog":{...}}
 ```
 
 初始 roster：
@@ -123,7 +123,7 @@ standard, ptc, minimal, cordis
 
 ### 4.1 覆盖内置 preset
 
-`PUT /api/preset-manager/native`，body 抄自 `readDocument('standard')`，改 `name=Standard X`：
+`PUT /api/preset-editor/native`，body 抄自 `readDocument('standard')`，改 `name=Standard X`：
 
 - 返回 `{"ok":true,"preset":{...,"name":"Standard X","mode":"override"}}`
 - profile `cordis.patch.yml` 出现托管块 `- id: preset-standard`
@@ -132,7 +132,7 @@ standard, ptc, minimal, cordis
 
 ### 4.2 新增原生 preset
 
-`POST /api/preset-manager/native`，id `native-demo`，从 standard 复制 plugins：
+`POST /api/preset-editor/native`，id `native-demo`，从 standard 复制 plugins：
 
 - 返回 `ok:true`，`mode:"create"`，`rowId:"preset-native-demo"`
 - `cordis.patch.yml` 出现：
@@ -153,11 +153,11 @@ standard, ptc, minimal, cordis
 
 ### 4.4 工具过滤 overlay
 
-`PUT /api/preset-manager/native/overlay`：
+`PUT /api/preset-editor/native/overlay`：
 
 ```json
 { "id": "standard", "enabled": true,
-  "tools": { "mode": "deny", "allow": [], "deny": ["preset_manager_probe","bash"] } }
+  "tools": { "mode": "deny", "allow": [], "deny": ["preset_editor_probe","bash"] } }
 ```
 
 返回 overlay；`GET /native` 的 standard.overlay 一致。`DELETE` 可移除。
@@ -170,7 +170,7 @@ standard, ptc, minimal, cordis
 - 写 `native.json` 前，把旧状态保存为 `backups/native-<ISO>-g<generation>.json`；
 - 默认保留最近 20 份，可用 `backup` / `backupDir` / `backupKeep` 配置调整。
 
-实测：`GET /api/preset-manager/native/backups` 返回：
+实测：`GET /api/preset-editor/native/backups` 返回：
 
 ```json
 {"ok":true,"enabled":true,"keep":20,"backups":[{"name":"patch-2026-11-14T18-05-23-596Z-g1.yml","kind":"patch","bytes":343}]}
@@ -215,11 +215,11 @@ await ctx.get('agentPresets').mount(agentCtx, 'standard')
 创建真实 Agent 后：
 
 1. 读取 `composedPreset === 'standard'`；
-2. `ctx.tools.definitions(agent)` 包含 standard 的 33 个工具（含 `bash`、`preset_manager_probe`）；
-3. 执行 `ctx.tools.execute` 固定探针 → `preset-manager-probe-ok`；
-4. 设置 overlay deny `preset_manager_probe,bash`；
-5. 再读 definitions：`bash`、`preset_manager_probe` 消失；
-6. 再执行探针 → `Error: 原生预设「standard」的工具过滤不允许调用「preset_manager_probe」`；
+2. `ctx.tools.definitions(agent)` 包含 standard 的 33 个工具（含 `bash`、`preset_editor_probe`）；
+3. 执行 `ctx.tools.execute` 固定探针 → `preset-editor-probe-ok`；
+4. 设置 overlay deny `preset_editor_probe,bash`；
+5. 再读 definitions：`bash`、`preset_editor_probe` 消失；
+6. 再执行探针 → `Error: 原生预设「standard」的工具过滤不允许调用「preset_editor_probe」`；
 7. 清除 overlay；
 8. definitions 恢复；探针恢复 `ok`。
 
@@ -229,12 +229,12 @@ await ctx.get('agentPresets').mount(agentCtx, 'standard')
 
 ```json
 "composedPreset": "standard",
-"visibleDefault": ["bash", ..., "preset_manager_probe", ...],
+"visibleDefault": ["bash", ..., "preset_editor_probe", ...],
 "visibleFiltered": [ ... no bash/probe ... ],
 "visibleRestored": [ ... bash/probe back ... ],
-"probeDefault": {"isError": false, "text": "preset-manager-probe-ok"},
-"probeFiltered": {"isError": true, "text": "Error: 原生预设「standard」的工具过滤不允许调用「preset_manager_probe」"},
-"probeRestored": {"isError": false, "text": "preset-manager-probe-ok"}
+"probeDefault": {"isError": false, "text": "preset-editor-probe-ok"},
+"probeFiltered": {"isError": true, "text": "Error: 原生预设「standard」的工具过滤不允许调用「preset_editor_probe」"},
+"probeRestored": {"isError": false, "text": "preset-editor-probe-ok"}
 ```
 
 > 注意：`visibleDefault` 中 standard 的实际工具取决于 profile 的 `standard` 组合；fixture 没有修改原生组合，因此工具集与官方一致。
@@ -353,7 +353,7 @@ dsh plugin --profile e2e add link:/path/to/dsh-preset-editor/test/fixtures/e2e-a
 # 写 profile patch（见 §3）
 DSH_HOME=$DSH_HOME dsh --profile e2e --port 0 --no-open
 # 认证后：
-curl -b cookies "$BASE/api/preset-manager/native?catalog=1"
+curl -b cookies "$BASE/api/preset-editor/native?catalog=1"
 # 读取 .e2e-results.json
 ```
 

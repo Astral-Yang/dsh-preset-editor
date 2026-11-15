@@ -8,13 +8,13 @@
 # and live in `$DSH_HOME/preset-editor/native.json`; the UI writes there and to
 # the managed block in the profile's cordis.patch.yml.
 - insert:
-    - id: preset-manager
+    - id: preset-editor
       name: dsh-preset-editor
       config:
         # Optional explicit state file. Default:
         #   $DSH_HOME/preset-editor/native.json
         stateFile: ''
-        # Register the harmless `preset_manager_probe` tool and expose the
+        # Register the harmless `preset_editor_probe` tool and expose the
         # authenticated self-test route. Intended for acceptance tests.
         diagnostics: false
         # How long tool-registration bursts are coalesced before live agents

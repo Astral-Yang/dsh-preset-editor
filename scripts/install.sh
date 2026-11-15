@@ -5,7 +5,7 @@
 #
 # The profile's plugin manager forwards `add link:<this directory>` to pnpm and
 # appends the package to dsh.profile.bundles, so the bundle layer's
-# cordis.patch.yml inserts the `preset-manager` Loader row. Restart the profile
+# cordis.patch.yml inserts the `preset-editor` Loader row. Restart the profile
 # afterwards (or let dsh-hmr reload it) and open Settings -> 预设管理.
 set -euo pipefail
 

@@ -140,7 +140,7 @@ DSH 的 Agent 能力由**原生 Agent preset** 组合：一个 preset 是一份 
 ### 4.2 profile patch 托管块
 
 ```yaml
-# >>> dsh-preset-manager managed presets — do not edit this block manually
+# >>> dsh-preset-editor managed presets — do not edit this block manually
 - id: preset-standard
   name: '@deepseek-ai/dsh-agent-preset'
   config:
@@ -155,7 +155,7 @@ DSH 的 Agent 能力由**原生 Agent preset** 组合：一个 preset 是一份 
         id: readonly
         order: 9
         plugins: [ ... ]
-# <<< dsh-preset-manager managed presets
+# <<< dsh-preset-editor managed presets
 ```
 
 - 覆盖使用**直接行**，按 Loader patch 的 id 匹配替换完整 config。
@@ -168,7 +168,7 @@ DSH 的 Agent 能力由**原生 Agent preset** 组合：一个 preset 是一份 
 - 默认开启：写 profile patch 前备份旧 patch；写 `native.json` 前备份旧状态。
 - 目录：`$DSH_HOME/preset-editor/backups`，可通过 `backupDir` 指定。
 - 保留最近 `backupKeep` 份（默认 20），按 mtime 裁剪。
-- 页面头部展示备份状态/数量；“备份记录”弹窗列出文件、系统本地时间、B/KB/MB 大小；API `GET /api/preset-manager/native/backups`。
+- 页面头部展示备份状态/数量；“备份记录”弹窗列出文件、系统本地时间、B/KB/MB 大小；API `GET /api/preset-editor/native/backups`。
 - 备份失败只记录 warning，不阻断主写入；主写入失败时回滚 patch/state。
 
 ### 4.4 校验
@@ -224,7 +224,7 @@ DSH 的 Agent 能力由**原生 Agent preset** 组合：一个 preset 是一份 
 lib/index.js          原生版入口：NativeStore/Manager/Runtime、服务、事件、API
 lib/native.js         roster 读取、entryList YAML、managed patch、overlays、HMR 验证
 lib/native-runtime.js 每 Agent guard/restrict，按 native preset id 读取 overlay
-lib/native-http.js    /api/preset-manager/native 与 /overlay
+lib/native-http.js    /api/preset-editor/native 与 /overlay
 lib/client.js         左侧「预设管理」
 lib/catalog.js        工具发现/分类（复用）
 lib/store.js          旧 overlay 存储（回归测试）
@@ -304,7 +304,7 @@ lib/probe.js          诊断探针
 
 真实实例：
 - 独立 DSH_HOME + `dsh --profile e2e --port 0 --no-open`；
-- curl cookie jar 打 `/api/preset-manager/native`；
+- curl cookie jar 打 `/api/preset-editor/native`；
 - API 写入/覆盖/新增/恢复；
 - Chrome CDP 打开 左侧「预设管理」并截图；
 - fixture 挂载 `standard` 原生 preset，设置/清除 overlay 并执行 probe。

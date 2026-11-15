@@ -49,15 +49,6 @@ npm 安装（发布后）：
 dsh plugin --profile web add dsh-preset-editor
 ```
 
-> 从旧包名 `dsh-preset-manager` 升级：先移除旧包，避免同一个 Loader row id 注册两次：
->
-> ```bash
-> dsh plugin --profile web remove dsh-preset-manager
-> dsh plugin --profile web add dsh-preset-editor
-> ```
->
-> 新版本的数据/备份目录为 `$DSH_HOME/preset-editor`。当前没有旧版本用户，因此不做旧目录迁移。
-
 重启 profile（或等待 HMR）：
 
 ```bash
@@ -72,14 +63,14 @@ dsh --profile web
 ./scripts/uninstall.sh web
 ```
 
-状态保留在 `$DSH_HOME/preset-editor/native.json`；需要清理时手动删除该目录。profile patch 中的托管块可先通过 UI“恢复内置定义/删除自定义”清掉，或手动删除 `# >>> dsh-preset-manager managed presets` 到 `# <<<` 的块。
+状态保留在 `$DSH_HOME/preset-editor/native.json`；需要清理时手动删除该目录。profile patch 中的托管块可先通过 UI“恢复内置定义/删除自定义”清掉，或手动删除 `# >>> dsh-preset-editor managed presets` 到 `# <<<` 的块。
 
 ---
 
 ## 3. 配置
 
 ```yaml
-- id: preset-manager
+- id: preset-editor
   name: dsh-preset-editor
   config:
     stateFile: ''              # 默认 $DSH_HOME/preset-editor/state.json；native.json 与其同目录
@@ -111,7 +102,7 @@ profile 的 `cordis.patch.yml` 对相同 id 的配置是整行替换，覆盖时
 - 备份记录弹窗内可直接关闭/开启自动备份；关闭后停止生成新备份，已有备份保留。profile 配置 `backup: false` 是硬关闭，UI 不能重新开启。
 - 备份时间按当前系统时区显示；大小使用 B / KB / MB，不显示原始字节数。
 - 回滚会先备份当前版本，再按 native → patch 顺序恢复所选快照；恢复 patch 时同步托管定义，恢复 native 时重建 patch 托管块，避免两边不一致。
-- API：`GET /api/preset-manager/native/backups`。
+- API：`GET /api/preset-editor/native/backups`。
 
 ---
 
@@ -206,7 +197,7 @@ profile 的 `cordis.patch.yml` 对相同 id 的配置是整行替换，覆盖时
 ### 5.1 托管块格式
 
 ```yaml
-# >>> dsh-preset-manager managed presets — do not edit this block manually
+# >>> dsh-preset-editor managed presets — do not edit this block manually
 - id: preset-standard                    # 覆盖内置：直接行
   name: '@deepseek-ai/dsh-agent-preset'
   config:
@@ -222,7 +213,7 @@ profile 的 `cordis.patch.yml` 对相同 id 的配置是整行替换，覆盖时
         name: My Preset
         order: 9
         plugins: [ ... ]
-# <<< dsh-preset-manager managed presets
+# <<< dsh-preset-editor managed presets
 ```
 
 其他 profile patch 行会保留；托管块只由本插件重写。
@@ -240,12 +231,12 @@ x-dsh-preset-action: 1
 
 | Method | Path | 用途 |
 |---|---|---|
-| GET | `/api/preset-manager/native?catalog=1` | 原生 roster + 每个组合 + 工具目录 + overlays + backup 状态 |
-| GET | `/api/preset-manager/native/backups` | 自动备份记录 |
-| POST | `/api/preset-manager/native/backups/restore` | 回滚到指定快照（`{ names }`） |
-| PUT | `/api/preset-manager/native/backups/policy` | 开关自动备份 / 调整保留份数（`{ enabled?, keep? }`） |
-| POST/PUT/DELETE | `/api/preset-manager/native` | 新建 / 覆盖 / 恢复或删除 |
-| PUT/DELETE | `/api/preset-manager/native/overlay` | 设置 / 移除工具过滤 |
+| GET | `/api/preset-editor/native?catalog=1` | 原生 roster + 每个组合 + 工具目录 + overlays + backup 状态 |
+| GET | `/api/preset-editor/native/backups` | 自动备份记录 |
+| POST | `/api/preset-editor/native/backups/restore` | 回滚到指定快照（`{ names }`） |
+| PUT | `/api/preset-editor/native/backups/policy` | 开关自动备份 / 调整保留份数（`{ enabled?, keep? }`） |
+| POST/PUT/DELETE | `/api/preset-editor/native` | 新建 / 覆盖 / 恢复或删除 |
+| PUT/DELETE | `/api/preset-editor/native/overlay` | 设置 / 移除工具过滤 |
 
 请求/响应示例：
 
