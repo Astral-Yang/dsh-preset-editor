@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { chmod, mkdtemp, readFile, stat, writeFile, readdir, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, stat, writeFile, readdir, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -21,7 +21,7 @@ async function withStore(fn) {
   }
 }
 
-test('missing file starts empty and writes 0600 state atomically', async () => {
+test('missing file starts empty and writes state atomically (0600 on POSIX)', async () => {
   await withStore(async ({ store, file }) => {
     const loaded = store.loadSync()
     assert.deepEqual(loaded.warnings, [])
@@ -30,8 +30,10 @@ test('missing file starts empty and writes 0600 state atomically', async () => {
       draft.presets.push({ id: 'a', name: 'A', tools: { mode: 'all', allow: [], deny: [] }, enabled: true, order: 0 })
     })
     assert.equal(state.generation, 1)
-    const mode = (await stat(file)).mode & 0o777
-    assert.equal(mode, 0o600)
+    if (process.platform !== 'win32') {
+      const mode = (await stat(file)).mode & 0o777
+      assert.equal(mode, 0o600)
+    }
     const parsed = JSON.parse(await readFile(file, 'utf8'))
     assert.equal(parsed.presets[0].id, 'a')
   })
@@ -80,15 +82,19 @@ test('a failed mutator commits nothing', async () => {
 
 
 test('a write failure preserves the previous snapshot and generation', async () => {
-  await withStore(async ({ store, file, dir }) => {
+  await withStore(async ({ store, file }) => {
     await store.transact((draft) => { draft.defaultPresetId = 'a' })
     const before = await readFile(file, 'utf8')
     const generation = store.generation
-    await chmod(dir, 0o500)
+    // Portable write failure: replacing the target file with a directory makes
+    // the atomic rename fail on both POSIX and Windows, without relying on chmod.
+    await rm(file)
+    await mkdir(file)
     try {
-      await assert.rejects(store.transact((draft) => { draft.defaultPresetId = 'b' }), /EACCES|EPERM|permission/)
+      await assert.rejects(store.transact((draft) => { draft.defaultPresetId = 'b' }))
     } finally {
-      await chmod(dir, 0o700)
+      await rm(file, { recursive: true, force: true })
+      await writeFile(file, before)
     }
     assert.equal(store.getState().defaultPresetId, 'a')
     assert.equal(store.generation, generation)
