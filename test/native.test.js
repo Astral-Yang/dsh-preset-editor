@@ -373,6 +373,8 @@ test('snapshot grouping prefers the native generation immediately before each pa
     const paired = snapshots.find((snapshot) => snapshot.files.length === 2)
     assert.deepEqual(paired.files.sort(), ['native-2026-11-15T10-00-00-001Z-g1.json', 'patch-2026-11-15T10-00-00-002Z-g2.yml'])
     assert.deepEqual(snapshots.find((snapshot) => snapshot.files.length === 1).files, ['patch-2026-11-15T10-00-00-000Z-g1.yml'])
+    await native.setBackupKeep(1)
+    assert.equal((await native.listSnapshots()).length, 1)
   } finally {
     await rm(dir, { recursive: true, force: true })
   }
