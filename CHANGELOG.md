@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- 修复备份记录弹窗中“自动备份：开启 · {n} 份（保留 {keep}）”直接显示占位符的问题，改用 `fmt` 插值。
+
 ## 0.2.0 — 2026-11-15
 
 - 新建 preset ID 限制为小写字母、数字和 `-`，与 DSH-IM 5.x 的 Agent Preset 校验一致；已有 legacy ID（含大写/其他字符）仍可编辑，不会被强制迁移。

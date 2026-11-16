@@ -269,6 +269,7 @@ await ctx.get('agentPresets').mount(agentCtx, 'standard')
 | 备份回滚 | ✅ 备份记录每行“回滚”；确认后 POST `/backups/restore`；实测 standard 从 `Backup Test` 恢复为 `standard`，并自动生成回滚前备份 |
 | 备份显示 | ✅ 时间按系统本地时区 `YYYY-MM-DD HH:mm:ss`；大小显示 B / KB / MB |
 | 自动备份开关 | ✅ 备份记录弹窗可关闭/开启；关闭后新写入不再生成备份，历史备份保留；profile `backup:false` 为硬关闭 |
+| 备份状态文案 | ✅ 弹窗中的“开启 · N 份（保留 K）”使用 `fmt` 插值，不再显示 `{n}`/`{keep}` |
 | 备份快照 | ✅ patch/native 同一次操作合并为一条，按系统时间命名并计 1 份；保留份数可在弹窗调整 |
 | 未保存切换 | ✅ 使用页面内 modal（不再 `window.confirm`）；显示“继续编辑 / 放弃修改”，实测放弃后切到 ptc |
 | 布局 | ✅ 三栏工作台（272px 预设脊柱 + 编辑器 + 238px 状态轨）；≤1380px 隐藏状态轨，≤980px 单列 |
