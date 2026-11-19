@@ -8,6 +8,7 @@
 - 工具预览区分 `visible` / `hidden`，不把工具过滤与 prompt 过滤混为权限边界；真实 profile 已验证 `standard` 的 `dsh-expression:companion` 与工具 overlay。
 - 组成预览改为单列 manifest：顺序编号、低频 separator、内联展开；移除嵌套滚动容器，全文/schema 只让 tab body 一个滚动区域承载。
 - 修复移动端整体布局：将 981–1380px 的双列规则限定在该区间，追加 ≤980px 单列堆叠；tab bar 换行，筛选/提示词列表取消内部滚动，窄屏列表压缩并去掉重复的新建入口。
+- 修复移动端无法滚动：DSH 的 main panel 不提供滚动，改为在 ≤980px 时让 `.dspm_page` 自身 `height:100% + overflow-y:auto` 成为唯一纵向滚动容器，列表/编辑器/预览共用该滚动。
 - 新增逐原生 preset 的**系统提示词段过滤**：可保留/排除 `system-prompt/assemble` 最终 sections，覆盖插件在全局 prompt scope 注册、但 preset 只过滤了工具的情况（例如关闭 `send_meme` 后仍注入的 `dsh-expression:companion` 斗图规则）。
 - 提示词段目录通过 global + 每个 preset 的 `systemPrompt.assemble({ scope })` 汇总，包含 assembly listener 动态追加的 section；`harness:identity` 与 persona prefix/suffix 始终受保护。
 - 运行时监听器使用 `prepend + global`，在 `next()` 返回后过滤最终 assembly；避免普通 scope 监听器被全局 listener 的 `next()` 后追加内容绕过。

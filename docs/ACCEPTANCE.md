@@ -231,7 +231,8 @@ native.json: test1.mode = create
 - 组成预览 UI 为单列 manifest：section/context 有顺序编号，全文/schema 用原生 `<details>` 内联展开；除 tab body 外无嵌套滚动容器。
 - `warnings` 与 `notes` 已分离：静态工具可见性说明进入 notes，不再混在真正的 warning 中。
 - Web 页面加载的 `client.js` bundle 包含 `PreviewPane`、`dspm_previewStats` 与「组成预览」文案。
-- 移动端截图显示旧的 1380px 双列规则覆盖了 980px 单列规则，导致编辑器横向裁切；现已把双列规则限定在 981–1380px，并在 CSS 末尾追加 ≤980px 单列/无嵌套滚动覆盖，待移动端复测。
+- 移动端截图显示旧的 1380px 双列规则覆盖了 980px 单列规则，导致编辑器横向裁切；现已把双列规则限定在 981–1380px，并在 CSS 末尾追加 ≤980px 单列/无嵌套滚动覆盖。
+- DSH 的 main panel 自身不滚动；移动端改为 `.dspm_page` 作为唯一纵向滚动容器，避免移除 tabBody 滚动后整页无法滚动。待移动端复测。
 
 结论：真实 profile 的 preview API、assembly 数据与 overlay 模拟已验证；浏览器内点击 tab/展开全文的交互截图仍未执行。脱敏证据见 [composition-preview-e2e.json](evidence/composition-preview-e2e.json)。
 
