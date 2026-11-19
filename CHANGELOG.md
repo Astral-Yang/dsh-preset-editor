@@ -13,6 +13,7 @@
 - 清理同类 UI 原始枚举/内部词：预设 mode 映射为内置/自定义/已覆盖/外部声明，section/tool 来源使用可读标签；工具过滤帮助文案不再直接暴露 `tools.guard` / `tools.restrict`，空状态不再直说 `assembly`。
 - 备份记录类型不再显示 `patch` / `state` 原始枚举，改为「配置 / 状态 / 配置 + 状态」；文件数改为「N 个文件」。
 - 工具与提示词段的可用范围不再显示 `global`，改为「全局」。
+- 人格配置字段标签改为中文优先并保留原始键名：人格前缀（prefix）、完整提示词模式（complete）、注入运行时上下文（includeRuntimeContext）。
 - 新增逐原生 preset 的**系统提示词段过滤**：可保留/排除 `system-prompt/assemble` 最终 sections，覆盖插件在全局 prompt scope 注册、但 preset 只过滤了工具的情况（例如关闭 `send_meme` 后仍注入的 `dsh-expression:companion` 斗图规则）。
 - 提示词段目录通过 global + 每个 preset 的 `systemPrompt.assemble({ scope })` 汇总，包含 assembly listener 动态追加的 section；`harness:identity` 与 persona prefix/suffix 始终受保护。
 - 运行时监听器使用 `prepend + global`，在 `next()` 返回后过滤最终 assembly；避免普通 scope 监听器被全局 listener 的 `next()` 后追加内容绕过。
