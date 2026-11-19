@@ -337,3 +337,15 @@ lib/probe.js          诊断探针
 5. 只过滤 `assembly.sections`，不处理 `assembly.contexts`；`complete: true` persona 下提示“不生效”。
 6. 旧 `native.json` / 旧 overlay 请求保持兼容；只更新 `tools` 的客户端不得清空 `prompts`。
 7. UI 使用独立「提示词段」tab，提供 all/allow/deny、搜索、来源筛选、受保护标记与 `complete` 警告。
+
+---
+
+## 14. 0.4.0 增量：预设组成预览
+
+1. 每个原生 preset 提供只读「组成预览」，展示 `systemPrompt.assemble({ scope })` 的 sections、contexts、variables、tools。
+2. 预览只能是预设级静态快照：不得伪造真实会话的 cwd、沙箱、审批、历史消息、附件、工具结果或当前模型。
+3. 默认返回截断预览；全文 / 完整 tool schema 通过 `part=` 按需返回，单条上限 200,000 字符。
+4. 预览叠加当前 overlay：prompt 标记 `filtered`，tools 标记 `visible` / `hidden`；不写回配置。
+5. `{{model}}` 等无法在预设级快照中解析的变量必须列入 `unresolvedVariables` 并提示。
+6. API 仅 GET，沿用 owner-only / Host / Origin 校验；每次 `acquireScope` 必须在 `finally` dispose。
+7. UI 使用独立「组成预览」tab，提供 sections/contexts/tools/variables 与按需展开，不默认渲染超大全文。

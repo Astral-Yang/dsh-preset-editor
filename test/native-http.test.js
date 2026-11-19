@@ -17,6 +17,8 @@ function harness() {
     async listBackups() { return [] },
     async restoreBackup(name) { calls.push(['restore', name]); return { restored: name, kind: 'patch', application: 'applied', generation: 4 } },
     async list() { return { presets: [{ id: 'standard', name: 'standard' }], defaultId: 'standard', warnings: [] } },
+    async read(id) { if (id === 'missing') throw new Error('missing'); return { id, name: id, plugins: [], mode: 'builtin', builtIn: true } },
+    overlay() { return null },
     async save(input, generation) { calls.push(['save', input, generation]); return { preset: { id: input.id }, application: 'applied', generation: 3 } },
     async reset(id, generation) { calls.push(['reset', id, generation]); return { removed: true, application: 'applied', generation: 3 } },
     async setOverlay(id, input, generation) { calls.push(['setOverlay', id, input, generation]); return { overlay: { tools: { mode: 'deny' } }, generation: 3 } },
@@ -25,7 +27,12 @@ function harness() {
   const runtime = { refreshAll() {}, }
   const scope = {
     connection: { fetch: { register(route) { routes.push(route); return async () => {} } } },
-    get(name) { if (name === 'tools') return { definitions: () => [] }; return undefined },
+    systemPrompt: { async assemble() { return { sections: [], contexts: [], variables: {}, tools: [] } } },
+    get(name) {
+      if (name === 'tools') return { definitions: () => [] }
+      if (name === 'agentPresets') return { async acquireScope() { return { key: {}, async [Symbol.asyncDispose]() {} } } }
+      return undefined
+    },
   }
   installNativeRoutes(scope, { native, runtime, config: { diagnostics: true, backup: true, backupKeep: 20 }, logger: { info() {}, warn() {}, error() {}, debug() {} } })
   async function call(method, path, { body, write = true } = {}) {
@@ -45,7 +52,7 @@ function harness() {
 
 test('native routes combine methods on one path and list state', async () => {
   const h = harness()
-  assert.equal(h.routes.length, 5)
+  assert.equal(h.routes.length, 6)
   const state = await h.call('GET', NATIVE_ROUTES.native + '?catalog=1', { write: false })
   assert.equal(state.status, 200)
   assert.equal(state.body.presets[0].id, 'standard')
@@ -74,6 +81,19 @@ test('native overlay routes set and clear', async () => {
   const clear = await h.call('DELETE', NATIVE_ROUTES.overlay, { body: { id: 'standard', generation: 3 } })
   assert.equal(clear.status, 200)
   assert.equal(h.calls[1][0], 'clearOverlay')
+})
+
+test('native preview route returns a summary and on-demand parts', async () => {
+  const h = harness()
+  const summary = await h.call('GET', NATIVE_ROUTES.preview + '?id=standard', { write: false })
+  assert.equal(summary.status, 200)
+  assert.equal(summary.body.preview.id, 'standard')
+  assert.deepEqual(summary.body.preview.tools.items, [])
+  const prompt = await h.call('GET', NATIVE_ROUTES.preview + '?id=standard&part=prompt', { write: false })
+  assert.equal(prompt.status, 200)
+  assert.equal(typeof prompt.body.text, 'string')
+  const missing = await h.call('GET', NATIVE_ROUTES.preview + '?id=missing', { write: false })
+  assert.equal(missing.status, 500)
 })
 
 test('native backup restore requires the action header and dispatches', async () => {

@@ -1,0 +1,80 @@
+{
+  "capturedAt": "2026-11-19T10:01:41.476Z",
+  "environment": {
+    "dsh": "0.2.2-rc.1",
+    "node": "v24.22.3",
+    "profile": "isolated DSH_HOME",
+    "plugins": [
+      "dsh-preset-editor",
+      "dsh-meme"
+    ]
+  },
+  "preset": "standard",
+  "beforeOverlay": {
+    "sections": 23,
+    "contexts": 7,
+    "tools": 37,
+    "renderedChars": 5571,
+    "unresolvedVariables": [
+      "model"
+    ],
+    "memePresent": true,
+    "memeProtected": false
+  },
+  "overlay": {
+    "tools": {
+      "mode": "deny",
+      "deny": [
+        "bash",
+        "send_meme"
+      ]
+    },
+    "prompts": {
+      "mode": "deny",
+      "deny": [
+        "dsh-expression:companion"
+      ]
+    }
+  },
+  "afterOverlay": {
+    "sections": 23,
+    "tools": 37,
+    "renderedChars": 5375,
+    "memeFiltered": true,
+    "renderedHasMeme": false,
+    "bashVisibility": "hidden",
+    "sendMemeVisibility": "hidden",
+    "toolCounts": {
+      "total": 37,
+      "visible": 35,
+      "hidden": 2,
+      "guardOnly": 0,
+      "unknown": 0
+    },
+    "promptFilter": {
+      "mode": "deny",
+      "allow": [],
+      "deny": [
+        "dsh-expression:companion"
+      ]
+    }
+  },
+  "onDemand": {
+    "promptPartChars": 5375,
+    "sectionPart": {
+      "name": "dsh-expression:companion",
+      "chars": 194
+    },
+    "toolPart": {
+      "name": "bash",
+      "schema": true
+    },
+    "missingPartStatus": 404
+  },
+  "uiBundle": {
+    "served": true,
+    "containsPreviewPane": true,
+    "containsCompositionTab": true,
+    "containsPreviewApiPath": true
+  }
+}

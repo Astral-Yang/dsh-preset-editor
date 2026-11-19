@@ -1,11 +1,12 @@
 # dsh-preset-editor
 
-把 **DeepSeek Harness（DSH）原生 Agent preset** 变成可直接编辑的可视化对象：在同一份 roster 中查看 `standard`、`ptc`、`minimal`、`cordis` 以及自定义 preset，编辑它们的人格与插件组合，新增原生 preset，并可为每个原生 preset 附加逐工具过滤与系统提示词段过滤。
+把 **DeepSeek Harness（DSH）原生 Agent preset** 变成可直接编辑的可视化对象：在同一份 roster 中查看 `standard`、`ptc`、`minimal`、`cordis` 以及自定义 preset，编辑它们的人格与插件组合，新增原生 preset，并可为每个原生 preset 附加逐工具过滤与系统提示词段过滤，查看最终组成预览。
 
 - **不再维护一套平行预设列表**：列表直接来自 `ctx.agentPresets`，与官方 Agent preset 选择器、Session header、`/permission` 等原生机制共用同一身份。
 - **编辑/新增写入 profile patch**：托管块写入 `cordis.patch.yml`，由 DSH HMR 实时重组；无 HMR 的部署返回“需重启”。
 - **逐工具过滤是叠加层**：用 `tools.guard` 执行拦截、`tools.restrict` 收窄可见性，不改变原生插件组合。
 - **提示词段过滤也是叠加层**：用 `system-prompt/assemble` waterfall 移除指定 section，只影响模型看到的 system prompt，不改变工具权限。
+- **组成预览是只读快照**：查看每个 preset 的 sections、静态 contexts、variables 与 tool declarations；不伪造真实会话历史。
 - **不修改 DSH 核心**：公开 `agentPresets`、`profileContext`、`loader`、`connection.fetch`、slot 等接口。
 
 ![原生 Agent 预设](docs/images/native-presets.png)
@@ -22,10 +23,11 @@
 | 恢复内置定义 / 删除自定义 | ✅ | 移除本地覆盖或新增声明 |
 | 逐工具过滤叠加 | ✅ | 允许 / 排除 / 不额外过滤；实际执行验证 |
 | 提示词段过滤叠加 | ✅ | all / allow / deny；真实 Harness 自动化验证，真实 Web UI 待截图验收 |
+| 预设组成预览 | ✅ | 静态 sections / contexts / variables / tools；真实 profile API 验证，UI 待浏览器截图 |
 | HMR 实时重组 | ✅ | patch 写入后等待 roster 更新；超时回滚 |
 | 无 HMR 部署 | ✅ | 返回 `restart-required`，不伪装成立即生效 |
 | 真实 Web UI | ✅ | 左侧「预设管理」；真实实例已截图验收 |
-| 测试 | ✅ | 78 个测试（含真实 Harness prompt/tool 集成） |
+| 测试 | ✅ | 83 个测试（含真实 Harness prompt/tool/preview 覆盖） |
 
 已验证 DSH：`@deepseek-ai/dsh@0.2.2-rc.1`，Node `24.x`。
 
@@ -200,6 +202,37 @@ profile 的 `cordis.patch.yml` 对相同 id 的配置是整行替换，覆盖时
 - 过滤按 **原生 preset id** 绑定；同一 preset 的所有 Agent 共享同一配置，其他 preset 不受影响。
 - 提示词段过滤不是权限边界：隐藏提示词不等于禁用插件或工具；需要执行拦截时仍应使用工具过滤。
 
+### 4.8 组成预览（预设静态快照）
+
+每个原生 preset 新增「组成预览」tab，用来查看该 preset **组装给模型的内容**，但明确不包含真实会话历史。
+
+展示：
+
+- `sections`：按 assembly 顺序列出 section 名称、来源、protected / filtered 状态、字符数与截断预览；
+- `renderedPreview`：最终 system prompt 的预览，可展开完整文本；
+- `contexts`：预注册的 runtime context；空 context 会显示为空；
+- `variables`：当前 assembly 的插值变量；
+- `tools`：preset scope 的 tool declarations、来源、参数数量、overlay 决策；
+- `capabilities`：插件行数、启用行数、MCP 工具数。
+
+Preview API：
+
+```text
+GET /api/preset-editor/native/preview?id=standard
+GET /api/preset-editor/native/preview?id=standard&part=prompt
+GET /api/preset-editor/native/preview?id=standard&part=section&name=harness:identity
+GET /api/preset-editor/native/preview?id=standard&part=context&name=sandbox:policy
+GET /api/preset-editor/native/preview?id=standard&part=tool&name=read
+```
+
+语义边界：
+
+- **不做真实会话快照**：没有 Agent/session 时，`working-directory:current`、`sandbox:policy`、`approval:policy` 等 context 为空，UI 会提示；
+- `{{model}}` 等会话变量在静态预览中无法插值，会列为 `unresolvedVariables` 并提示；
+- 工具 overlay 在预览中模拟：denied 且可被 `restrict` 的工具标为 `hidden`，其余标为 `visible`；preset scope 自己的工具在 Agent scope 中通常可被 restrict；
+- 预览是只读的，不会调用工具、不会写 preset 或 overlay；
+- 默认只返回截断预览；全文和完整 tool schema 通过上面 `part=` 请求按需加载，单条上限 200,000 字符。
+
 ---
 
 ## 5. 实现机制（关键依据）
@@ -213,6 +246,7 @@ profile 的 `cordis.patch.yml` 对相同 id 的配置是整行替换，覆盖时
 | 每 Agent 工具过滤 | `agent.ctx.tools.guard/restrict` | Agent 创建/`agent-preset/selected` 时绑定原生 preset id |
 | 每 Agent 提示词段过滤 | `system-prompt/assemble` waterfall（`prepend + global`） | 在 `next()` 后过滤最终 `sections`；用 `context.agent` 定位 native preset |
 | Prompt section 目录 | `agentPresets.acquireScope()` + `systemPrompt.assemble({ scope })` | 包含 global、preset 与 assembly listener 追加的 section |
+| 组成预览 | `systemPrompt.assemble({ scope })` 的 `sections/contexts/variables/tools` | 预设 scope 静态快照；不伪造 Agent 级 runtime context |
 | 管理 API | `ctx.connection.fetch.register` | 认证、Host/Origin、owner Peer 在 handler 前执行；同路径只注册一次 |
 | UI | `ctx.slots` + primitives | 左侧「预设管理」；无平行选择器/胶囊 |
 
@@ -259,6 +293,7 @@ x-dsh-preset-action: 1
 | PUT | `/api/preset-editor/native/backups/policy` | 开关自动备份 / 调整保留份数（`{ enabled?, keep? }`） |
 | POST/PUT/DELETE | `/api/preset-editor/native` | 新建 / 覆盖 / 恢复或删除 |
 | PUT/DELETE | `/api/preset-editor/native/overlay` | 设置 / 移除工具与提示词段过滤 |
+| GET | `/api/preset-editor/native/preview?id=...` | 预设组成预览；`part=` 取全文/section/context/tool schema |
 
 请求/响应示例：
 
@@ -319,6 +354,7 @@ DSH_PACKAGES=/path/to/@deepseek-ai npm test
 - `test/runtime.integration.test.js`：真实 Harness 工具可见性/guard 执行（旧 overlay 引擎，仍是核心机制回归）；
 - `test/prompt-runtime.test.js`：真实 Harness 中验证 global listener 追加的 section 可按 preset 过滤、protected section 保留、不同 Agent 隔离；
 - `test/catalog.test.js`：`buildPromptCatalog` 合并 global / preset / listener 追加的 section；
+- `test/preview.test.js`：组成预览的 sections / contexts / variables / tools、overlay 模拟、按需 part；
 - `test/schema/store/manager/http/catalog`：旧 overlay 引擎与存储/API 回归；
 - `test/fixtures/e2e-agent`：真实 profile 中挂载 `standard` 原生 preset，设置/清除工具过滤并执行探针。
 
@@ -332,6 +368,8 @@ DSH_PACKAGES=/path/to/@deepseek-ai npm test
 - **profile patch 写入依赖 DSH HMR 实时重组**；无 HMR 时返回 `restart-required`，重启后生效。若该 preset 正被运行中的 Agent 使用，DSH 可能保持旧 revision，插件会返回 `restart-required`（patch/state 已保存），重启后应用。
 - 原生 preset 的组合是**插件级**；逐工具过滤与提示词段过滤都是叠加层，不改变原生组合。
 - 提示词段过滤只处理 `assembly.sections`，不处理 `assembly.contexts`（工作目录、沙箱、审批等运行时上下文）；后者由 DSH 与 `dsh-persona` 的 `includeRuntimeContext` 管理。
+- 组成预览是**预设级静态快照**，不包含会话历史、附件、工具结果、当前模型与 Agent 级 runtime context；需要这些内容时应看真实会话日志/轨迹，而不是把预览当作完整请求。
+- 组成预览中的工具可见性是静态模拟：只反映 preset scope 的声明；Agent scope 额外注册的工具、实际 `toolSet` 准入与模型调用结果不在快照内。
 - DSH 的 `PromptSection` 没有 owner 元数据；目录中的来源只能按名称前缀推断，section 名称随插件升级变化时可能失效，UI 以名称为准。
 - `complete: true` 人格会让 DSH 在 waterfall 后恢复 complete section 为唯一 prompt；此时提示词段过滤不生效。
 - `readDocument` 只给组合 YAML，不给声明行 id；本插件通过 `ctx.loader.entries()` 查找 rowId。若上游改变 Loader 表示，需适配。
@@ -348,9 +386,10 @@ DSH_PACKAGES=/path/to/@deepseek-ai npm test
 ```
 lib/index.js          Host 入口（原生 preset 版）
 lib/native.js         native roster 读取、YAML、managed patch、overlays
-lib/native-runtime.js 每 Agent 工具过滤 guard/restrict
-lib/native-http.js    原生 preset 管理 API
-lib/client.js         左侧「预设管理」 UI
+lib/native-runtime.js 每 Agent 工具过滤 guard/restrict + 提示词段过滤
+lib/native-http.js    原生 preset 管理 API（含 preview）
+lib/client.js         左侧「预设管理」 UI（含组成预览）
+lib/preview.js        预设组成预览 builder
 lib/store.js          旧 overlay 存储（回归测试仍使用）
 lib/manager.js        旧 overlay 域（回归测试仍使用）
 lib/runtime.js        旧 overlay runtime（回归测试仍使用）

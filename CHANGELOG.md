@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- 新增每个原生 preset 的「组成预览」：展示 assembly 的 prompt sections、静态 runtime contexts、variables、tool declarations，以及 overlay 后的 visible / hidden 工具。
+- 新增 `GET /api/preset-editor/native/preview`，默认返回截断预览；`part=prompt|section|context|tool` 按需返回全文或完整 schema，单条上限 200,000 字符。
+- 预览明确标注为预设级静态快照：不伪造 cwd / 沙箱 / 审批 / 会话历史；`{{model}}` 等会话变量会列为 `unresolvedVariables`。
+- 工具预览区分 `visible` / `hidden`，不把工具过滤与 prompt 过滤混为权限边界；真实 profile 已验证 `standard` 的 `dsh-expression:companion` 与工具 overlay。
 - 新增逐原生 preset 的**系统提示词段过滤**：可保留/排除 `system-prompt/assemble` 最终 sections，覆盖插件在全局 prompt scope 注册、但 preset 只过滤了工具的情况（例如关闭 `send_meme` 后仍注入的 `dsh-expression:companion` 斗图规则）。
 - 提示词段目录通过 global + 每个 preset 的 `systemPrompt.assemble({ scope })` 汇总，包含 assembly listener 动态追加的 section；`harness:identity` 与 persona prefix/suffix 始终受保护。
 - 运行时监听器使用 `prepend + global`，在 `next()` 返回后过滤最终 assembly；避免普通 scope 监听器被全局 listener 的 `next()` 后追加内容绕过。

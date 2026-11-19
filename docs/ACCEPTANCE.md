@@ -59,6 +59,8 @@ skipped 0
 | `test/http.test.js` | 旧 overlay API/CSRF/错误 | 7/7 |
 | `test/native-http.test.js` | 原生 preset API：同路径多方法、CSRF、overlay、备份回滚、备份策略、错误 | 6/6 |
 | `test/runtime.integration.test.js` | 真实 Harness guard/restrict/prompt/双会话/dispose | 6/6 |
+| `test/prompt-runtime.test.js` | 真实 Harness prompt listener 追加段过滤、protected、Agent 隔离 | 4/4 |
+| `test/preview.test.js` | 组成预览 sections/contexts/variables/tools、overlay 模拟、按需 part、真实 SystemPrompt | 4/4 |
 
 > 旧 overlay 模块保留为回归测试与可复用控制原语；正式 UI/入口已切换到原生版。
 
@@ -215,6 +217,21 @@ native.json: test1.mode = create
 
 结论：真实 profile 的 API、catalog 与 runtime prompt 过滤已验证；浏览器内点击保存/清除的 UI 交互截图仍未执行。脱敏证据见 [prompt-filter-e2e.json](evidence/prompt-filter-e2e.json)。
 
+### 4.9 组成预览（0.4.0 候选，真实 profile）
+
+独立 `DSH_HOME`，加载 `dsh-preset-editor` 与 `dsh-meme`：
+
+- `GET /preview?id=standard` 返回 23 个 prompt section、7 个 context、37 个 tool declaration；包含真实 `dsh-expression:companion`。
+- `model` 变量在预设级快照中无法插值，返回 `unresolvedVariables: ["model"]` 与明确 warning。
+- 设置 overlay `tools.deny=["bash","send_meme"]`、`prompts.deny=["dsh-expression:companion"]` 后再取预览：
+  - section 标记 `filtered: true`，渲染预览不再包含斗图规则；
+  - `bash` / `send_meme` 标为 `hidden`；
+  - counts 为 visible 35 / hidden 2 / total 37。
+- `part=prompt`、`part=section&name=dsh-expression:companion`、`part=tool&name=bash` 均返回 200；不存在的 section 返回 404 `PREVIEW_PART_NOT_FOUND`。
+- Web 页面加载的 `client.js` bundle 包含 `PreviewPane` 与「组成预览」文案。
+
+结论：真实 profile 的 preview API、assembly 数据与 overlay 模拟已验证；浏览器内点击 tab/展开全文的交互截图仍未执行。脱敏证据见 [composition-preview-e2e.json](evidence/composition-preview-e2e.json)。
+
 ---
 
 ## 5. 真实 Agent 执行验证（fixture）
@@ -340,6 +357,7 @@ await ctx.get('agentPresets').mount(agentCtx, 'standard')
 | PTC `run_code` overlay | 未执行 | 测试 profile native executor；guard 逻辑放行 `run_code`，内层未实测。 |
 | 导入/导出/同步 | 未实现 | 后续扩展。 |
 | 提示词段过滤的真实 profile/UI 验收 | 部分 | API/catalog/runtime 已在独立 profile 验证（见 §4.8）：真实 `dsh-expression:companion` 可过滤并恢复；浏览器内点击保存/清除/刷新与 `complete: true` 会话仍未执行。 |
+| 组成预览的真实 profile/UI 验收 | 部分 | API/assembly/overlay 模拟已在独立 profile 验证（见 §4.9）；浏览器内打开 tab、展开全文、查看 schema 的交互截图仍未执行。 |
 
 ---
 
@@ -385,4 +403,5 @@ curl -b cookies "$BASE/api/preset-editor/native?catalog=1"
 - ✅ 文档与截图。
 - ⚠️ 第 8 节未执行项已明确，不伪装为通过。
 - 版本 `0.2.0`，目标 DSH `0.2.2-rc.1`。
-- 0.3.0 候选：提示词段过滤新增 8 个自动化用例，当前完整套件 78/78；独立 profile 的 API/catalog/runtime 已用真实 `dsh-expression:companion` 验证，浏览器内 UI 交互截图仍待执行（见第 8 节）。
+- 0.3.0 候选：提示词段过滤新增 8 个自动化用例，真实 `dsh-expression:companion` 已验证；
+- 0.4.0 候选：组成预览新增 preview API/UI/测试，当前完整套件 83/83；真实 profile API 与 overlay 模拟已验证，浏览器内 UI 交互截图仍待执行（见第 8 节）。
