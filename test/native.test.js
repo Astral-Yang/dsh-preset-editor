@@ -92,6 +92,45 @@ test('NativeStore persists definitions and overlays through atomic transactions'
   }
 })
 
+test('NativeStore normalizes legacy overlays and keeps prompt filters on tool-only writes', async () => {
+  const { NativeStore, NativePresetManager } = await import('../lib/native.js')
+  const dir = await mkdtemp(join(tmpdir(), 'dspm-native-overlay-'))
+  try {
+    const file = join(dir, 'native.json')
+    await writeFile(file, JSON.stringify({
+      version: 1,
+      generation: 2,
+      definitions: {},
+      overlays: {
+        standard: { tools: { mode: 'deny', deny: ['bash'] }, enabled: true },
+      },
+    }))
+    const store = new NativeStore({ file, limits: { maxPresets: 10, maxPersonaChars: 1000, maxSessionAssignments: 10 }, logger: { info() {}, warn() {}, error() {}, debug() {} } })
+    store.loadSync()
+    assert.deepEqual(store.getState().overlays.standard.prompts, { mode: 'all', allow: [], deny: [] })
+    const native = new NativePresetManager({ ctx: {}, store, logger: { info() {}, warn() {}, error() {}, debug() {} }, config: {} })
+
+    const updated = await native.setOverlay('standard', {
+      prompts: { mode: 'deny', deny: ['dsh-expression:companion'] },
+      enabled: true,
+    })
+    assert.equal(updated.overlay.tools.mode, 'deny')
+    assert.deepEqual(updated.overlay.prompts.deny, ['dsh-expression:companion'])
+
+    const toolOnly = await native.setOverlay('standard', {
+      tools: { mode: 'allow', allow: ['read'] },
+      enabled: true,
+    })
+    assert.deepEqual(toolOnly.overlay.tools.allow, ['read'])
+    assert.deepEqual(toolOnly.overlay.prompts.deny, ['dsh-expression:companion'])
+
+    await native.clearOverlay('standard')
+    assert.equal(store.getState().overlays.standard, undefined)
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
 test('NativePresetManager writes a managed profile patch block and resets it', async () => {
   const { NativeStore, NativePresetManager } = await import('../lib/native.js')
   const dir = await mkdtemp(join(tmpdir(), 'dspm-native-mgr-'))

@@ -1,10 +1,11 @@
 # dsh-preset-editor
 
-把 **DeepSeek Harness（DSH）原生 Agent preset** 变成可直接编辑的可视化对象：在同一份 roster 中查看 `standard`、`ptc`、`minimal`、`cordis` 以及自定义 preset，编辑它们的人格与插件组合，新增原生 preset，并可为每个原生 preset 附加逐工具过滤。
+把 **DeepSeek Harness（DSH）原生 Agent preset** 变成可直接编辑的可视化对象：在同一份 roster 中查看 `standard`、`ptc`、`minimal`、`cordis` 以及自定义 preset，编辑它们的人格与插件组合，新增原生 preset，并可为每个原生 preset 附加逐工具过滤与系统提示词段过滤。
 
 - **不再维护一套平行预设列表**：列表直接来自 `ctx.agentPresets`，与官方 Agent preset 选择器、Session header、`/permission` 等原生机制共用同一身份。
 - **编辑/新增写入 profile patch**：托管块写入 `cordis.patch.yml`，由 DSH HMR 实时重组；无 HMR 的部署返回“需重启”。
 - **逐工具过滤是叠加层**：用 `tools.guard` 执行拦截、`tools.restrict` 收窄可见性，不改变原生插件组合。
+- **提示词段过滤也是叠加层**：用 `system-prompt/assemble` waterfall 移除指定 section，只影响模型看到的 system prompt，不改变工具权限。
 - **不修改 DSH 核心**：公开 `agentPresets`、`profileContext`、`loader`、`connection.fetch`、slot 等接口。
 
 ![原生 Agent 预设](docs/images/native-presets.png)
@@ -20,10 +21,11 @@
 | 新增原生 preset | ✅ | 以现有 preset 为模板或空组合；写入 `insert` 声明 |
 | 恢复内置定义 / 删除自定义 | ✅ | 移除本地覆盖或新增声明 |
 | 逐工具过滤叠加 | ✅ | 允许 / 排除 / 不额外过滤；实际执行验证 |
+| 提示词段过滤叠加 | ✅ | all / allow / deny；真实 Harness 自动化验证，真实 Web UI 待截图验收 |
 | HMR 实时重组 | ✅ | patch 写入后等待 roster 更新；超时回滚 |
 | 无 HMR 部署 | ✅ | 返回 `restart-required`，不伪装成立即生效 |
 | 真实 Web UI | ✅ | 左侧「预设管理」；真实实例已截图验收 |
-| 测试 | ✅ | 70 个测试（含真实 Harness 集成） |
+| 测试 | ✅ | 78 个测试（含真实 Harness prompt/tool 集成） |
 
 已验证 DSH：`@deepseek-ai/dsh@0.2.2-rc.1`，Node `24.x`。
 
@@ -180,6 +182,24 @@ profile 的 `cordis.patch.yml` 对相同 id 的配置是整行替换，覆盖时
 - 过滤按 **原生 preset id** 绑定；任何使用该 preset 的会话共享同一过滤。
 - 过滤页顶部（说明、保存/移除、模式、搜索工具栏）固定；滚动条只出现在工具列表内部，不再出现在 tab 外层。
 
+### 4.7 提示词段过滤（叠加）
+
+每个原生 preset 还可以独立配置 system prompt section 过滤：
+
+| 模式 | 行为 |
+|---|---|
+| 不额外过滤 | 保持当前 prompt section 集合 |
+| 仅保留选中的提示词段 | 未勾选 section 从最终 assembly 中移除 |
+| 允许全部，但排除选中的提示词段 | 勾选 section 被移除；新 section 默认保留 |
+
+- 适用场景：插件在全局 prompt scope 注册了静态提示词，但 preset 只过滤了它的工具。例如 `dsh-expression`（meme）在 `send_meme` 工具被关闭后，仍通过 `system-prompt/assemble` 追加 `dsh-expression:companion` 斗图规则；现在可按 preset 移除该段。
+- 过滤实现：运行时注册一个 `system-prompt/assemble` waterfall 监听器，`prepend + global`，在 `next()` 返回后过滤最终 `sections`。这与工具的 `guard/restrict` 不同，只影响模型可见文本，不改变工具权限、插件组合或执行行为。
+- 目录来源：`buildPromptCatalog()` 通过 `agentPresets.acquireScope()` + `systemPrompt.assemble({ scope })` 读取 global、preset 与 assembly listener 追加的 section。
+- 受保护 section：`harness:identity`、`deployment:persona-prefix`、`deployment:persona-suffix` 始终保留，不能被过滤移除。
+- `complete: true` 人格：DSH 会把 complete section 作为唯一 system prompt，其他 section 本来就会被抑制；UI 会提示此时 prompt 过滤不生效。
+- 过滤按 **原生 preset id** 绑定；同一 preset 的所有 Agent 共享同一配置，其他 preset 不受影响。
+- 提示词段过滤不是权限边界：隐藏提示词不等于禁用插件或工具；需要执行拦截时仍应使用工具过滤。
+
 ---
 
 ## 5. 实现机制（关键依据）
@@ -191,6 +211,8 @@ profile 的 `cordis.patch.yml` 对相同 id 的配置是整行替换，覆盖时
 | 编辑/新增 | `ctx.profileContext.patchPath` + 原子写 profile patch | 托管块：内置覆盖用直接行，新增用 `- insert:` |
 | 实时生效 | DSH HMR 监听 `cordis.patch.yml` 并重组 | 写入后轮询 `agentPresets.list()` 验证；失败回滚 |
 | 每 Agent 工具过滤 | `agent.ctx.tools.guard/restrict` | Agent 创建/`agent-preset/selected` 时绑定原生 preset id |
+| 每 Agent 提示词段过滤 | `system-prompt/assemble` waterfall（`prepend + global`） | 在 `next()` 后过滤最终 `sections`；用 `context.agent` 定位 native preset |
+| Prompt section 目录 | `agentPresets.acquireScope()` + `systemPrompt.assemble({ scope })` | 包含 global、preset 与 assembly listener 追加的 section |
 | 管理 API | `ctx.connection.fetch.register` | 认证、Host/Origin、owner Peer 在 handler 前执行；同路径只注册一次 |
 | UI | `ctx.slots` + primitives | 左侧「预设管理」；无平行选择器/胶囊 |
 
@@ -231,12 +253,12 @@ x-dsh-preset-action: 1
 
 | Method | Path | 用途 |
 |---|---|---|
-| GET | `/api/preset-editor/native?catalog=1` | 原生 roster + 每个组合 + 工具目录 + overlays + backup 状态 |
+| GET | `/api/preset-editor/native?catalog=1` | 原生 roster + 每个组合 + 工具目录 + 提示词段目录 + overlays + backup 状态 |
 | GET | `/api/preset-editor/native/backups` | 自动备份记录 |
 | POST | `/api/preset-editor/native/backups/restore` | 回滚到指定快照（`{ names }`） |
 | PUT | `/api/preset-editor/native/backups/policy` | 开关自动备份 / 调整保留份数（`{ enabled?, keep? }`） |
 | POST/PUT/DELETE | `/api/preset-editor/native` | 新建 / 覆盖 / 恢复或删除 |
-| PUT/DELETE | `/api/preset-editor/native/overlay` | 设置 / 移除工具过滤 |
+| PUT/DELETE | `/api/preset-editor/native/overlay` | 设置 / 移除工具与提示词段过滤 |
 
 请求/响应示例：
 
@@ -254,13 +276,26 @@ x-dsh-preset-action: 1
 
 `plugins` 或 `pluginsYaml` 二选一；服务端用 DSH 的 `entryListSchema` 校验/序列化。
 
+```json
+// PUT /native/overlay
+{
+  "id": "standard",
+  "enabled": true,
+  "tools": { "mode": "deny", "allow": [], "deny": ["send_meme"] },
+  "prompts": { "mode": "deny", "allow": [], "deny": ["dsh-expression:companion"] },
+  "generation": 3
+}
+```
+
+`tools` 与 `prompts` 可分别省略；省略的一侧保留已有配置。旧客户端只发送 `tools` 时，`prompts` 不会被清空。
+
 `generation` 是并发提示，不是写入门槛：UI 会在每次写前同步最新 generation，服务端对过期提示只记录 warning，不会因为无关的 overlay/备份写入而拒绝本次原生 preset 编辑。
 
 ---
 
 ## 7. 数据与恢复
 
-- `$DSH_HOME/preset-editor/native.json`：托管定义 + 工具 overlays；模式 `0600`，原子写。
+- `$DSH_HOME/preset-editor/native.json`：托管定义 + 工具 / 提示词段 overlays；模式 `0600`，原子写。
 - profile `cordis.patch.yml`：托管块；是 DSH 真正加载的来源。
 - 若 `native.json` 丢失但 patch 托管块仍在，插件启动时会从 patch 恢复定义。
 - 若 patch 被手动清空但 `native.json` 仍存在，UI 会显示 managed 但实际未加载；保存/重置可重新生成托管块。
@@ -272,12 +307,18 @@ x-dsh-preset-action: 1
 
 ```bash
 npm test
+# 真实 Harness 集成用例需要 DSH 包路径；未设置时相关用例会 skip：
+DSH_PACKAGES=/path/to/@deepseek-ai npm test
+# 本机示例：
+# DSH_PACKAGES=/home/astral/.nvm/versions/node/v24.22.3/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai npm test
 ```
 
 覆盖：
 
 - `test/native.test.js`：`!!js` YAML round-trip、托管块合并/替换/恢复、结构校验、NativeStore 持久化、patch 写入、reset、stale 容错、orphan 修复、insert mode 保持与备份回滚；
 - `test/runtime.integration.test.js`：真实 Harness 工具可见性/guard 执行（旧 overlay 引擎，仍是核心机制回归）；
+- `test/prompt-runtime.test.js`：真实 Harness 中验证 global listener 追加的 section 可按 preset 过滤、protected section 保留、不同 Agent 隔离；
+- `test/catalog.test.js`：`buildPromptCatalog` 合并 global / preset / listener 追加的 section；
 - `test/schema/store/manager/http/catalog`：旧 overlay 引擎与存储/API 回归；
 - `test/fixtures/e2e-agent`：真实 profile 中挂载 `standard` 原生 preset，设置/清除工具过滤并执行探针。
 
@@ -289,7 +330,10 @@ npm test
 
 - 已验证 `@deepseek-ai/dsh@0.2.2-rc.1`；声明 `>=0.2.2-rc.1 <0.3.0-0`。
 - **profile patch 写入依赖 DSH HMR 实时重组**；无 HMR 时返回 `restart-required`，重启后生效。若该 preset 正被运行中的 Agent 使用，DSH 可能保持旧 revision，插件会返回 `restart-required`（patch/state 已保存），重启后应用。
-- 原生 preset 的组合是**插件级**；逐工具过滤是叠加层，不改变原生组合。
+- 原生 preset 的组合是**插件级**；逐工具过滤与提示词段过滤都是叠加层，不改变原生组合。
+- 提示词段过滤只处理 `assembly.sections`，不处理 `assembly.contexts`（工作目录、沙箱、审批等运行时上下文）；后者由 DSH 与 `dsh-persona` 的 `includeRuntimeContext` 管理。
+- DSH 的 `PromptSection` 没有 owner 元数据；目录中的来源只能按名称前缀推断，section 名称随插件升级变化时可能失效，UI 以名称为准。
+- `complete: true` 人格会让 DSH 在 waterfall 后恢复 complete section 为唯一 prompt；此时提示词段过滤不生效。
 - `readDocument` 只给组合 YAML，不给声明行 id；本插件通过 `ctx.loader.entries()` 查找 rowId。若上游改变 Loader 表示，需适配。
 - 自定义 preset 由本插件托管块创建；若用户也在别处写同 id 行，可能冲突，托管块按最后写入优先。
 - 原生 preset 选择仍由 DSH 官方 UI/`/permission`/默认设置负责；本插件不另设选择器。

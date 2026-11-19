@@ -2,7 +2,7 @@
 
 > 分支：`feat/prompt-section-filter`
 > 目标版本：`0.3.0`（拟，具体以发布策略为准）
-> 状态：计划，尚未开始实现
+> 状态：已实现，待真实 profile / Web UI 验收
 > 最后更新：2026-11-19
 > 验证基线：DeepSeek Harness `0.2.2-rc.1`，Node `24.x`
 
@@ -137,34 +137,50 @@
 
 ### 4.3 运行时过滤
 
-在 `NativeOverlayRuntime` 中新增每 Agent 的 prompt 监听器：
+在 `NativeOverlayRuntime` 构造时注册**一个** runtime 级 prompt 监听器，而不是每个 Agent 各注册一个：
 
 ```js
-entry.promptDisposer = entry.agent.ctx.on(
+this.promptDisposer = this.scope.on(
   'system-prompt/assemble',
   async (assembly, context, next) => {
     const result = await next()
-    const current = this.entries.get(entry.sessionId)
-    const overlay = current ? this.overlayFor(entry.sessionId, current.nativeId) : null
+    const agent = context?.agent
+    if (!agent || typeof agent.id !== 'string') return result
+    const entry = this.entries.get(agent.id)
+    if (!entry) return result
+    const overlay = this.overlayFor(entry.sessionId, entry.nativeId)
     const filter = promptFilterFor(overlay)
-    if (!filter) return result
+    if (!filter || !Array.isArray(result?.sections)) return result
     return {
       ...result,
       sections: result.sections.filter((section) =>
-        permitsPrompt(filter, section.name)
+        permitsPrompt(filter, section?.name)
       ),
     }
   },
+  { prepend: true, global: true },
 )
 ```
 
-细节：
+为什么不是 `agent.ctx.on(...)`：
 
-- 先 `await next()`，再过滤最终结果，确保其他 waterfall 监听器添加的 section 也被处理；
-- 每次 assembly 读取当前 overlay，preset 切换 / overlay 更新不需要重新注册监听器；
-- `detach()` 时释放 `promptDisposer`；
+- Cordis waterfall 的监听器**外层先执行**。实测顺序是 `global listener -> agent listener -> ...`；`dsh-expression` 在全局监听器里 `await next()` 之后才追加 `dsh-expression:companion`。
+- 如果过滤监听器注册在 Agent scope，它是内层，`await next()` 返回时看到的是全局监听器追加**之前**的 sections；等它返回后，全局监听器再把 section 加回去，过滤被绕过。
+- 注册在 runtime scope 并传 `prepend: true`，它成为最外层：先调用 `next()` 走完所有全局/Agent 监听器，再过滤最终结果。
+- 传 `global: true` 让它收到所有 scope 的 assembly；再用 `context.agent.id` 映射 `entries`，只过滤已附加 Agent。
+- 一个 runtime 只注册一个监听器；`dispose()` 释放。preset 切换 / overlay 更新时直接读当前 overlay，不需要重新注册。
+
+残余风险：
+
+- 若另一个插件也以 `prepend: true` 注册并在 `next()` 之后追加 section，且注册时间晚于本插件，它会位于本过滤器外层，仍可能绕过。当前观测到的插件（`dsh-expression`、`dsh-free-search`、`dsh-plugin-link-resolver`）都使用普通 `on`，不受影响；后续新增此类插件需复验。
+
+其他细节：
+
+- 受保护 section（`harness:identity`、`deployment:persona-prefix`、`deployment:persona-suffix`）始终保留；
+- `complete: true` 人格在 waterfall 后由 DSH 恢复为唯一 section，prompt 过滤无法覆盖；
 - 监听器安装失败只记录 warning，不影响工具过滤与 Agent 启动；
-- 不使用空 section shadow 作为主方案：同一 scope 内重复注册同名 section 会抛错，且需要知道 order；waterfall 更通用。
+- 不使用空 section shadow 作为主方案：同一 scope 内重复注册同名 section 会抛错，且需要知道 order；waterfall 更通用；
+- 只过滤 `sections`，不处理 `contexts`。
 
 ### 4.4 HTTP API
 
@@ -241,15 +257,17 @@ entry.promptDisposer = entry.agent.ctx.on(
 
 ### M3 — Runtime 过滤（1–1.5 天）
 
-- `lib/native-runtime.js`：新增 `promptDisposer`、`promptFilterFor()`、`permitsPrompt()`；
-- `lib/index.js`：无需新增 inject，确认 `system-prompt/assemble` 事件在 agent scope 可用；
-- `test/runtime.integration.test.js` 或新增 `native-runtime.integration.test.js`：
-  - 全局 section 被 preset A 隐藏、preset B 保留；
-  - 清除过滤后恢复；
+- `lib/native-runtime.js`：新增 runtime 级 `promptDisposer`、`promptFilterFor()`、`permitsPrompt()`；
+- 监听器注册在 runtime scope：`{ prepend: true, global: true }`；**不要**注册在 `agent.ctx`（会被全局 listener 的 `next()` 后追加绕过）；
+- `lib/index.js`：无需新增 inject，`systemPrompt` 已注入；
+- 新增 `test/prompt-runtime.test.js`：
+  - 模拟 `dsh-expression` 的全局 listener，在 `next()` 后追加 section；preset A 移除，preset B 保留；
+  - protected section 保留；
+  - 无 prompt filter / `enabled: false` 时行为不变；
   - `complete: true` 人格下不破坏原行为；
-  - 工具过滤与 prompt 过滤可同时工作。
+  - 工具过滤与 prompt 过滤可同时工作（工具集成测试已有）。
 
-**验收**：两个 Agent 隔离；过滤后 `renderPrompt()` 不含目标段；无过滤时行为与现状完全一致。
+**验收**：两个 Agent 隔离；过滤后最终 assembly 不含目标段；无过滤时行为与现状完全一致。
 
 ### M4 — HTTP API（0.5 天）
 
@@ -363,26 +381,28 @@ entry.promptDisposer = entry.agent.ctx.on(
 
 ## 7. 验收标准
 
-- [ ] 旧 `native.json` 与旧 overlay 请求无回归；
-- [ ] `npm test` 全量通过；
-- [ ] 一个全局静态 prompt section 可在 preset A 中隐藏，preset B 仍可见；
-- [ ] 清除过滤后 section 恢复；
-- [ ] `complete: true` 人格下行为不被破坏；
-- [ ] 工具过滤与 prompt 过滤可同时启用且互不影响；
-- [ ] Web UI 可保存/清除/刷新保持；
-- [ ] README、ACCEPTANCE、CHANGELOG 更新。
+- [x] 旧 `native.json` 与旧 overlay 请求无回归；
+- [x] `npm test` 全量通过（78/78，含真实 Harness prompt 测试）；
+- [x] 一个全局静态 prompt section 可在 preset A 中隐藏，preset B 仍可见；
+- [x] 清除过滤/无过滤时 section 恢复（`test/prompt-runtime.test.js`）；
+- [x] protected section 始终保留；
+- [x] 工具过滤与 prompt 过滤可同时启用且互不影响（独立 disposer / 独立数据）；
+- [ ] 真实 Web UI 可保存/清除/刷新保持（本地代码完成，待真实 profile 截图）；
+- [x] README、ACCEPTANCE、CHANGELOG 更新。
 
 ## 8. 回滚方案
 
-- 功能级：配置 `promptFilter: false`（或移除对应 UI 入口）后，runtime 不注册监听器，行为回到 0.2.0；
-- 数据级：`DELETE /api/preset-editor/native/overlay` 清除单个 preset 的 overlay；
-- 代码级：revert feature branch；`native.json` 中多余的 `prompts` 字段对旧版本是未知字段，归一化时会忽略，不阻塞启动；
+- 功能级：把所有 preset 的 `prompts.mode` 置为 `all`，或 `DELETE /api/preset-editor/native/overlay` 清除对应 overlay；runtime 监听器仍在，但 `promptFilterFor()` 返回 `null`，行为与 0.2.0 等价；
+- 数据级：旧版本读取 `native.json` 时忽略未知 `prompts` 字段；`setOverlay()` 只更新 `tools` 也不会清空 `prompts`；
+- 代码级：revert feature branch；
 - 发布级：保留上一版本 `0.2.0` 的 tag 与包，必要时回退。
 
-## 9. 待确认决策
+> 未实现全局 `promptFilter: false` 开关：默认 overlay 为 `all`，功能本身是惰性的；再增加开关只会增加配置组合，暂不需要。
 
-1. `promptFilter` 默认开启还是先 opt-in？建议开发期 opt-in，验收后默认开启。
-2. 受保护 section 是否只包含 `harness:identity` 与两条 `deployment:persona-*`？是否允许过滤 `tool:*` 段？
-3. UI 用独立页签还是放在现有「工具过滤」页内作为第二卡片？建议独立页签，避免长列表拥挤。
-4. 是否需要同时支持 `assembly.contexts` 过滤？建议列为后续独立需求。
-5. 目标版本是否定为 `0.3.0`？
+## 9. 已定决策
+
+1. **默认开启**：不加全局 feature flag；每个 preset 的 overlay 默认 `all`，只有用户明确配置才改变 prompt。
+2. **受保护集合**：`harness:identity`、`deployment:persona-prefix`、`deployment:persona-suffix`；其余 section（含 `tool:*`）可过滤。
+3. **UI**：独立「提示词段」tab，不塞进工具过滤页。
+4. **contexts**：本期只过滤 `sections`，`assembly.contexts` 留作后续独立需求。
+5. **版本**：目标 `0.3.0`，待真实 profile/UI 验收后再发布。

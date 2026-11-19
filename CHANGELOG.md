@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- 新增逐原生 preset 的**系统提示词段过滤**：可保留/排除 `system-prompt/assemble` 最终 sections，覆盖插件在全局 prompt scope 注册、但 preset 只过滤了工具的情况（例如关闭 `send_meme` 后仍注入的 `dsh-expression:companion` 斗图规则）。
+- 提示词段目录通过 global + 每个 preset 的 `systemPrompt.assemble({ scope })` 汇总，包含 assembly listener 动态追加的 section；`harness:identity` 与 persona prefix/suffix 始终受保护。
+- 运行时监听器使用 `prepend + global`，在 `next()` 返回后过滤最终 assembly；避免普通 scope 监听器被全局 listener 的 `next()` 后追加内容绕过。
+- Overlay 数据新增 `prompts`，旧 `native.json` 自动补默认值；只更新 `tools` 的旧客户端不会清空已有 `prompts`。
+- UI 新增「提示词段」tab，支持 all/allow/deny、搜索、来源筛选、受保护标记，以及 `complete` 人格的不生效提示。
 - 修复备份记录弹窗中“自动备份：开启 · {n} 份（保留 {keep}）”直接显示占位符的问题，改用 `fmt` 插值。
 
 ## 0.2.0 — 2026-11-15

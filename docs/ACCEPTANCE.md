@@ -326,6 +326,7 @@ await ctx.get('agentPresets').mount(agentCtx, 'standard')
 | 鼠标坐标点击（CDP Input.dispatchMouseEvent） | 使用 DOM click | 本次 CDP 的 DOM click 成功；未使用坐标点击。 |
 | PTC `run_code` overlay | 未执行 | 测试 profile native executor；guard 逻辑放行 `run_code`，内层未实测。 |
 | 导入/导出/同步 | 未实现 | 后续扩展。 |
+| 提示词段过滤的真实 profile/UI 验收 | 部分 | `test/prompt-runtime.test.js` 已在真实 Harness 验证 listener-added section 过滤、protected 与 Agent 隔离；真实 Web profile 截图与 `complete: true` 会话仍待执行（0.3.0 候选）。 |
 
 ---
 
@@ -339,6 +340,8 @@ await ctx.get('agentPresets').mount(agentCtx, 'standard')
 6. 修改 profile 影响整个 profile；需备份。
 7. 不实现工作区/Session 级原生选择（无公开 API）。
 8. 旧 overlay 模块仍作为回归测试/工具原语保留，但入口/UI 已切换原生版。
+9. 提示词段过滤只处理 `assembly.sections`，不处理 `assembly.contexts`；`complete: true` 人格下其他 section 会被 DSH 抑制，过滤不生效。
+10. Prompt section 没有 owner 元数据；目录来源按名称前缀推断，插件改名后可能显示为未知来源。
 
 ---
 
@@ -364,8 +367,9 @@ curl -b cookies "$BASE/api/preset-editor/native?catalog=1"
 
 ## 11. 最终交付状态
 
-- ✅ 原生 preset 列表/编辑/新增/恢复/过滤，真实 profile + API + UI 验证。
-- ✅ 65/65 自动测试。
+- ✅ 原生 preset 列表/编辑/新增/恢复/过滤，真实 profile + API + UI 验证（0.2.0 范围）。
+- ✅ 65/65 自动测试（0.2.0 范围）。
 - ✅ 文档与截图。
 - ⚠️ 第 8 节未执行项已明确，不伪装为通过。
 - 版本 `0.2.0`，目标 DSH `0.2.2-rc.1`。
+- 0.3.0 候选：提示词段过滤新增 8 个自动化用例，当前完整套件 78/78；真实 Web profile/UI 截图仍待执行（见第 8 节）。

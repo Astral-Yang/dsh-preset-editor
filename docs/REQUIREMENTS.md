@@ -325,3 +325,15 @@ lib/probe.js          诊断探针
 8. `complete: true` 的 persona 可能抑制自定义人格行；这是 DSH prompt 语义，UI 显示 `complete` 开关。
 9. 外部 bundle 的 preset 保存会创建本地覆盖。
 10. 无导入/导出/同步/审计（后续）。
+
+---
+
+## 13. 0.3.0 增量：提示词段过滤
+
+1. 每个原生 preset 的 overlay 在 `tools` 之外新增 `prompts`，结构同为 `{ mode, allow, deny }`。
+2. 目录来自 global assembly 与每个 preset 的 scoped assembly，必须包含 `system-prompt/assemble` listener 动态追加的 section。
+3. 受保护 section：`harness:identity`、`deployment:persona-prefix`、`deployment:persona-suffix` 始终保留。
+4. runtime 过滤必须发生在所有 waterfall listener 之后；使用 runtime scope 的 `prepend + global` 监听器，不注册在单个 Agent scope。
+5. 只过滤 `assembly.sections`，不处理 `assembly.contexts`；`complete: true` persona 下提示“不生效”。
+6. 旧 `native.json` / 旧 overlay 请求保持兼容；只更新 `tools` 的客户端不得清空 `prompts`。
+7. UI 使用独立「提示词段」tab，提供 all/allow/deny、搜索、来源筛选、受保护标记与 `complete` 警告。

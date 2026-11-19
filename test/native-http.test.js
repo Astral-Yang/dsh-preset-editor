@@ -50,6 +50,7 @@ test('native routes combine methods on one path and list state', async () => {
   assert.equal(state.status, 200)
   assert.equal(state.body.presets[0].id, 'standard')
   assert.deepEqual(state.body.catalog.tools, [])
+  assert.deepEqual(state.body.catalog.promptSections, [])
 })
 
 test('native write routes require the action header and dispatch by method', async () => {
@@ -66,9 +67,10 @@ test('native write routes require the action header and dispatch by method', asy
 
 test('native overlay routes set and clear', async () => {
   const h = harness()
-  const set = await h.call('PUT', NATIVE_ROUTES.overlay, { body: { id: 'standard', enabled: true, tools: { mode: 'deny', deny: ['bash'] }, generation: 2 } })
+  const set = await h.call('PUT', NATIVE_ROUTES.overlay, { body: { id: 'standard', enabled: true, tools: { mode: 'deny', deny: ['bash'] }, prompts: { mode: 'deny', deny: ['dsh-expression:companion'] }, generation: 2 } })
   assert.equal(set.status, 200)
   assert.equal(h.calls[0][0], 'setOverlay')
+  assert.deepEqual(h.calls[0][2].prompts, { mode: 'deny', deny: ['dsh-expression:companion'] })
   const clear = await h.call('DELETE', NATIVE_ROUTES.overlay, { body: { id: 'standard', generation: 3 } })
   assert.equal(clear.status, 200)
   assert.equal(h.calls[1][0], 'clearOverlay')
