@@ -134,6 +134,14 @@ GET /api/preset-editor/native/preview?id=standard&part=tool&name=read
 
 不使用无限滚动；列表可滚动，全文在 `<pre>` 中展示。
 
+## 6.1 UI 结构
+
+- 单列 manifest，不采用多张同构卡片；
+- sections / contexts 按 assembly 顺序编号；
+- 完整 prompt / section / context / tool schema 用原生 `<details>` 内联展开；
+- 除 tab body 外不设置嵌套滚动容器；
+- filtered / protected / hidden 用 badge 与行级状态表达，不用装饰性底色堆叠。
+
 ## 7. 风险与缓解
 
 | 风险 | 影响 | 缓解 |

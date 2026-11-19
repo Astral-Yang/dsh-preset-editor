@@ -215,6 +215,8 @@ profile 的 `cordis.patch.yml` 对相同 id 的配置是整行替换，覆盖时
 - `tools`：preset scope 的 tool declarations、来源、参数数量、overlay 决策；
 - `capabilities`：插件行数、启用行数、MCP 工具数。
 
+UI 采用单列 manifest：sections / contexts 按 assembly 顺序编号，状态用 badge 表达；只有 tab body 一个滚动容器。完整 prompt、section、context 和 tool schema 都在原位内联展开，不再嵌套滚动小窗。
+
 Preview API：
 
 ```text
@@ -230,6 +232,7 @@ GET /api/preset-editor/native/preview?id=standard&part=tool&name=read
 - **不做真实会话快照**：没有 Agent/session 时，`working-directory:current`、`sandbox:policy`、`approval:policy` 等 context 为空，UI 会提示；
 - `{{model}}` 等会话变量在静态预览中无法插值，会列为 `unresolvedVariables` 并提示；
 - 工具 overlay 在预览中模拟：denied 且可被 `restrict` 的工具标为 `hidden`，其余标为 `visible`；preset scope 自己的工具在 Agent scope 中通常可被 restrict；
+- `warnings` 只放会影响判断的问题（未解析变量、complete 人格、组装失败等）；静态快照的边界说明放在 `notes`，避免和真正的问题混在一起；
 - 预览是只读的，不会调用工具、不会写 preset 或 overlay；
 - 默认只返回截断预览；全文和完整 tool schema 通过上面 `part=` 请求按需加载，单条上限 200,000 字符。
 

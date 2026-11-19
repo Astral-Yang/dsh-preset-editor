@@ -69,6 +69,8 @@ test('buildPresetPreview reports sections, contexts, tools and overlay decisions
   assert.equal(summary.tools.items.find((row) => row.name === 'send_meme').visibility, 'hidden')
   assert.equal(summary.tools.items.find((row) => row.name === 'read').visibility, 'visible')
   assert.deepEqual(summary.tools.counts, { total: 4, visible: 2, hidden: 2, guardOnly: 0, unknown: 0 })
+  assert.equal(summary.notes.some((note) => note.includes('静态模拟')), true)
+  assert.equal(summary.warnings.some((warning) => warning.includes('静态模拟')), false)
   assert.deepEqual(h.disposed, ['scope'])
 })
 
