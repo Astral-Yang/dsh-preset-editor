@@ -140,7 +140,8 @@ GET /api/preset-editor/native/preview?id=standard&part=tool&name=read
 - sections / contexts 按 assembly 顺序编号；
 - 完整 prompt / section / context / tool schema 用原生 `<details>` 内联展开；
 - 除 tab body 外不设置嵌套滚动容器；
-- filtered / protected / hidden 用 badge 与行级状态表达，不用装饰性底色堆叠。
+- filtered / protected / hidden 用 badge 与行级状态表达，不用装饰性底色堆叠；
+- ≤980px 时列表与编辑器单列堆叠，tab bar 换行，筛选/提示词列表取消内部滚动；981–1380px 的双列规则不再覆盖移动端。
 
 ## 7. 风险与缓解
 

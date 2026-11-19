@@ -215,7 +215,7 @@ profile 的 `cordis.patch.yml` 对相同 id 的配置是整行替换，覆盖时
 - `tools`：preset scope 的 tool declarations、来源、参数数量、overlay 决策；
 - `capabilities`：插件行数、启用行数、MCP 工具数。
 
-UI 采用单列 manifest：sections / contexts 按 assembly 顺序编号，状态用 badge 表达；只有 tab body 一个滚动容器。完整 prompt、section、context 和 tool schema 都在原位内联展开，不再嵌套滚动小窗。
+UI 采用单列 manifest：sections / contexts 按 assembly 顺序编号，状态用 badge 表达；只有 tab body 一个滚动容器。完整 prompt、section、context 和 tool schema 都在原位内联展开，不再嵌套滚动小窗。移动端（≤980px）列表与编辑器改为单列堆叠，tab bar 换行，filter/prompt 列表取消内部滚动，避免横向裁切。
 
 Preview API：
 
