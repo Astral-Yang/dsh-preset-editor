@@ -22,6 +22,7 @@ function outcome(result) {
 
 export function apply(ctx, rawConfig) {
   const config = rawConfig && typeof rawConfig === 'object' ? rawConfig : {}
+  ctx.systemPrompt.section({ name: 'e2e:prompt-marker', order: 900, text: 'E2E_PROMPT_MARKER' })
   const cwd = typeof config.cwd === 'string' ? config.cwd : process.cwd()
   const resultFile = typeof config.resultFile === 'string' ? config.resultFile : '/tmp/e2e-agent-result.json'
   const nativePreset = typeof config.nativePreset === 'string' ? config.nativePreset : 'standard'
@@ -74,6 +75,9 @@ export function apply(ctx, rawConfig) {
       result.visibleDefault = ctx.tools.definitions(agent).map((tool) => tool.name).sort()
       const assembly = await ctx.systemPrompt.assemble({ scope: agent, agent })
       result.promptDefault = assembly.sections.map((section) => section.text).join('\n\n').slice(0, 1600)
+      result.promptDefaultSections = assembly.sections.map((section) => section.name)
+      result.promptDefaultHasMarker = result.promptDefaultSections.includes('e2e:prompt-marker')
+      result.promptDefaultHasMeme = result.promptDefaultSections.includes('dsh-expression:companion')
       result.steps.push('attached')
 
       const probe = async () => {
@@ -103,6 +107,27 @@ export function apply(ctx, rawConfig) {
       result.visibleRestored = ctx.tools.definitions(agent).map((tool) => tool.name).sort()
       result.probeRestored = await probe()
       result.steps.push('probe-restored')
+
+      await api.setOverlay(nativePreset, {
+        enabled: true,
+        prompts: { mode: 'deny', allow: [], deny: ['e2e:prompt-marker', 'dsh-expression:companion'] },
+      })
+      api.refreshAll()
+      await new Promise((resolve) => setTimeout(resolve, 300))
+      const filteredAssembly = await ctx.systemPrompt.assemble({ scope: agent, agent })
+      result.promptFilteredSections = filteredAssembly.sections.map((section) => section.name)
+      result.promptFilteredHasMarker = result.promptFilteredSections.includes('e2e:prompt-marker')
+      result.promptFilteredHasMeme = result.promptFilteredSections.includes('dsh-expression:companion')
+      result.steps.push('prompt-filtered')
+
+      await api.clearOverlay(nativePreset)
+      api.refreshAll()
+      await new Promise((resolve) => setTimeout(resolve, 300))
+      const restoredAssembly = await ctx.systemPrompt.assemble({ scope: agent, agent })
+      result.promptRestoredSections = restoredAssembly.sections.map((section) => section.name)
+      result.promptRestoredHasMarker = result.promptRestoredSections.includes('e2e:prompt-marker')
+      result.promptRestoredHasMeme = result.promptRestoredSections.includes('dsh-expression:companion')
+      result.steps.push('prompt-restored')
       result.ok = true
     } catch (error) {
       result.error = error?.stack ?? String(error)

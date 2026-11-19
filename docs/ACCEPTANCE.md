@@ -202,6 +202,19 @@ native.json: test1.mode = create
 - patch 写入/激活失败 → 回滚 patch + state，返回错误。
 - HMR 超时（空 patch 曾导致）已修复：空托管块写回 `[]`。
 
+### 4.8 提示词段过滤（0.3.0 候选，真实 profile）
+
+独立 `DSH_HOME`，profile 同时加载 `dsh-preset-editor`、`dsh-meme` 和 `e2e-agent` fixture：
+
+- `GET /api/preset-editor/native?catalog=1` 返回 25 个 prompt section，其中包含真实的 `dsh-expression:companion`；`harness:identity`、`deployment:persona-prefix/suffix` 标记为 protected。
+- fixture 创建一个使用 `standard` 原生 preset 的真实 Agent，并注册全局 `e2e:prompt-marker` section。
+- 默认 assembly 同时包含 `e2e:prompt-marker` 与 `dsh-expression:companion`。
+- `PUT /native/overlay` 设置 `prompts: { mode: "deny", deny: ["e2e:prompt-marker", "dsh-expression:companion"] }` 后，两者都从最终 assembly 消失，protected section 保留。
+- `DELETE /native/overlay` 后两者恢复；fixture 记录 `promptDefaultHasMeme=true`、`promptFilteredHasMeme=false`、`promptRestoredHasMeme=true`。
+- Web 页面加载的 `dsh-preset-editor/client.js` bundle 包含 `PromptFilterPane`、`resetFilterPart` 与「提示词段」文案。
+
+结论：真实 profile 的 API、catalog 与 runtime prompt 过滤已验证；浏览器内点击保存/清除的 UI 交互截图仍未执行。脱敏证据见 [prompt-filter-e2e.json](evidence/prompt-filter-e2e.json)。
+
 ---
 
 ## 5. 真实 Agent 执行验证（fixture）
@@ -326,7 +339,7 @@ await ctx.get('agentPresets').mount(agentCtx, 'standard')
 | 鼠标坐标点击（CDP Input.dispatchMouseEvent） | 使用 DOM click | 本次 CDP 的 DOM click 成功；未使用坐标点击。 |
 | PTC `run_code` overlay | 未执行 | 测试 profile native executor；guard 逻辑放行 `run_code`，内层未实测。 |
 | 导入/导出/同步 | 未实现 | 后续扩展。 |
-| 提示词段过滤的真实 profile/UI 验收 | 部分 | `test/prompt-runtime.test.js` 已在真实 Harness 验证 listener-added section 过滤、protected 与 Agent 隔离；真实 Web profile 截图与 `complete: true` 会话仍待执行（0.3.0 候选）。 |
+| 提示词段过滤的真实 profile/UI 验收 | 部分 | API/catalog/runtime 已在独立 profile 验证（见 §4.8）：真实 `dsh-expression:companion` 可过滤并恢复；浏览器内点击保存/清除/刷新与 `complete: true` 会话仍未执行。 |
 
 ---
 
@@ -372,4 +385,4 @@ curl -b cookies "$BASE/api/preset-editor/native?catalog=1"
 - ✅ 文档与截图。
 - ⚠️ 第 8 节未执行项已明确，不伪装为通过。
 - 版本 `0.2.0`，目标 DSH `0.2.2-rc.1`。
-- 0.3.0 候选：提示词段过滤新增 8 个自动化用例，当前完整套件 78/78；真实 Web profile/UI 截图仍待执行（见第 8 节）。
+- 0.3.0 候选：提示词段过滤新增 8 个自动化用例，当前完整套件 78/78；独立 profile 的 API/catalog/runtime 已用真实 `dsh-expression:companion` 验证，浏览器内 UI 交互截图仍待执行（见第 8 节）。

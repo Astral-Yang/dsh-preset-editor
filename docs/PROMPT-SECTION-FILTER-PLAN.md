@@ -2,7 +2,7 @@
 
 > 分支：`feat/prompt-section-filter`
 > 目标版本：`0.3.0`（拟，具体以发布策略为准）
-> 状态：已实现，待真实 profile / Web UI 验收
+> 状态：已实现；独立 profile 的 API / catalog / runtime 已验证，Web UI 交互待验收
 > 最后更新：2026-11-19
 > 验证基线：DeepSeek Harness `0.2.2-rc.1`，Node `24.x`
 
@@ -387,7 +387,8 @@ this.promptDisposer = this.scope.on(
 - [x] 清除过滤/无过滤时 section 恢复（`test/prompt-runtime.test.js`）；
 - [x] protected section 始终保留；
 - [x] 工具过滤与 prompt 过滤可同时启用且互不影响（独立 disposer / 独立数据）；
-- [ ] 真实 Web UI 可保存/清除/刷新保持（本地代码完成，待真实 profile 截图）；
+- [x] 独立真实 profile：catalog 含 `dsh-expression:companion`；Agent assembly 中该 section 可过滤并恢复（证据 `docs/evidence/prompt-filter-e2e.json`）；
+- [ ] 真实 Web UI 内点击保存/清除/刷新保持（client bundle 已服务，待浏览器截图）；
 - [x] README、ACCEPTANCE、CHANGELOG 更新。
 
 ## 8. 回滚方案
