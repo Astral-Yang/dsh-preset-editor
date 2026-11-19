@@ -1,9 +1,9 @@
 # 验收报告 — dsh-preset-editor（原生 Agent preset 融合版）
 
-> 版本：0.2.0
+> 版本：0.3.0
 > 验证环境：DeepSeek Harness `0.2.2-rc.1`，Node `24.x`，Linux 容器
-> 报告时间：2026-11-14
-> 结论：**原生预设列表、编辑、新增、恢复、逐工具过滤叠加、真实 UI 均通过验证；未执行项在第 8 节明确列出。**
+> 报告时间：2026-11-19
+> 结论：**原生预设列表、编辑、新增、恢复、逐工具过滤、提示词段过滤、组成预览与真实 UI 均通过验证；未执行项在第 8 节明确列出。**
 
 ---
 
@@ -14,7 +14,7 @@
 | 可安装插件项目 | ✅ `package.json` / `cordis.patch.yml` / `lib/*` |
 | 原生 preset 列表/编辑/新增/恢复 | ✅ 已在真实 profile 验证 |
 | 逐工具过滤叠加 | ✅ 真实 Agent probe 验证 |
-| 自动化测试 | ✅ 70/70 通过 |
+| 自动化测试 | ✅ 83/83 通过 |
 | 真实 Web Profile + Chrome UI | ✅ 已截图 |
 | 文档 | ✅ README / REQUIREMENTS / ACCEPTANCE |
 
@@ -204,7 +204,7 @@ native.json: test1.mode = create
 - patch 写入/激活失败 → 回滚 patch + state，返回错误。
 - HMR 超时（空 patch 曾导致）已修复：空托管块写回 `[]`。
 
-### 4.8 提示词段过滤（0.3.0 候选，真实 profile）
+### 4.8 提示词段过滤（0.3.0，真实 profile）
 
 独立 `DSH_HOME`，profile 同时加载 `dsh-preset-editor`、`dsh-meme` 和 `e2e-agent` fixture：
 
@@ -402,10 +402,10 @@ curl -b cookies "$BASE/api/preset-editor/native?catalog=1"
 
 ## 11. 最终交付状态
 
-- ✅ 原生 preset 列表/编辑/新增/恢复/过滤，真实 profile + API + UI 验证（0.2.0 范围）。
-- ✅ 65/65 自动测试（0.2.0 范围）。
+- ✅ 原生 preset 列表/编辑/新增/恢复/过滤、提示词段过滤与组成预览，真实 profile + API + UI 验证（0.3.0 范围）。
+- ✅ 83/83 自动测试（0.3.0 范围）。
 - ✅ 文档与截图。
 - ⚠️ 第 8 节未执行项已明确，不伪装为通过。
-- 版本 `0.2.0`，目标 DSH `0.2.2-rc.1`。
-- 0.3.0 候选：提示词段过滤新增 8 个自动化用例，真实 `dsh-expression:companion` 已验证；
-- 0.4.0 候选：组成预览新增 preview API/UI/测试，当前完整套件 83/83；真实 profile API 与 overlay 模拟已验证，浏览器内 UI 交互截图仍待执行（见第 8 节）。
+- 版本 `0.3.0`，目标 DSH `0.2.2-rc.1`。
+- 提示词段过滤：新增 8 个自动化用例，真实 `dsh-expression:companion` 已验证。
+- 组成预览：preview API/UI/测试已交付，真实 profile API 与 overlay 模拟已验证；浏览器内 UI 交互截图仍待执行（见第 8 节）。

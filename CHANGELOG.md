@@ -1,12 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 — 2026-11-19
 
-- 新增每个原生 preset 的「组成预览」：展示 assembly 的 prompt sections、静态 runtime contexts、variables、tool declarations，以及 overlay 后的 visible / hidden 工具。
+- 新增每个原生 preset 的「组成预览」：展示预设组装后的提示词段、静态运行时上下文、变量、工具声明，以及工具过滤后的可见 / 隐藏工具。
 - 新增 `GET /api/preset-editor/native/preview`，默认返回截断预览；`part=prompt|section|context|tool` 按需返回全文或完整 schema，单条上限 200,000 字符。
-- 预览明确标注为预设级静态快照：不伪造 cwd / 沙箱 / 审批 / 会话历史；`{{model}}` 等会话变量会列为 `unresolvedVariables`。
-- 工具预览区分 `visible` / `hidden`，不把工具过滤与 prompt 过滤混为权限边界；真实 profile 已验证 `standard` 的 `dsh-expression:companion` 与工具 overlay。
-- 组成预览改为单列 manifest：顺序编号、低频 separator、内联展开；移除嵌套滚动容器，全文/schema 只让 tab body 一个滚动区域承载。
+- 预览明确标注为预设级静态快照：不伪造当前目录、沙箱、审批或会话历史；`{{model}}` 等会话变量会列为 `unresolvedVariables`。
+- 工具预览区分可见 / 隐藏状态，不把工具过滤与提示词过滤混为权限边界；真实 profile 已验证 `standard` 的 `dsh-expression:companion` 与工具过滤。
+- 组成预览改为单列清单：顺序编号、低频分隔线、内联展开；移除嵌套滚动容器，全文/schema 只让 tab body 一个滚动区域承载。
 - 修复移动端整体布局：将 981–1380px 的双列规则限定在该区间，追加 ≤980px 单列堆叠；tab bar 换行，筛选/提示词列表取消内部滚动，窄屏列表压缩并去掉重复的新建入口。
 - 修复移动端无法滚动：DSH 的 main panel 不提供滚动，改为在 ≤980px 时让 `.dspm_page` 自身 `height:100% + overflow-y:auto` 成为唯一纵向滚动容器，列表/编辑器/预览共用该滚动。
 - 优化组成预览的工具过滤描述：不再显示 `overlay: deny（…）`，改为「工具过滤 · 已排除 2 个工具」并列出工具名；allow/all/未启用分别使用可读文案，名称过多时折叠为「另有 N 个」。
@@ -17,9 +17,10 @@
 - 新增逐原生 preset 的**系统提示词段过滤**：可保留/排除 `system-prompt/assemble` 最终 sections，覆盖插件在全局 prompt scope 注册、但 preset 只过滤了工具的情况（例如关闭 `send_meme` 后仍注入的 `dsh-expression:companion` 斗图规则）。
 - 提示词段目录通过 global + 每个 preset 的 `systemPrompt.assemble({ scope })` 汇总，包含 assembly listener 动态追加的 section；`harness:identity` 与 persona prefix/suffix 始终受保护。
 - 运行时监听器使用 `prepend + global`，在 `next()` 返回后过滤最终 assembly；避免普通 scope 监听器被全局 listener 的 `next()` 后追加内容绕过。
-- Overlay 数据新增 `prompts`，旧 `native.json` 自动补默认值；只更新 `tools` 的旧客户端不会清空已有 `prompts`。
-- UI 新增「提示词段」tab，支持 all/allow/deny、搜索、来源筛选、受保护标记，以及 `complete` 人格的不生效提示。
+- 过滤数据新增 `prompts`，旧 `native.json` 自动补默认值；只更新 `tools` 的旧客户端不会清空已有 `prompts`。
+- UI 新增「提示词段」tab，支持全部 / 仅允许 / 排除、搜索、来源筛选、受保护标记，以及 `complete` 人格的不生效提示。
 - 修复备份记录弹窗中“自动备份：开启 · {n} 份（保留 {keep}）”直接显示占位符的问题，改用 `fmt` 插值。
+- 测试：83 / 83 通过。
 
 ## 0.2.0 — 2026-11-15
 

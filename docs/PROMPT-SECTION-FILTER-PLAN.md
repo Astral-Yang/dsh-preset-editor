@@ -1,7 +1,7 @@
 # dsh-preset-editor 系统提示词段过滤 — 推进计划
 
 > 分支：`feat/prompt-section-filter`
-> 目标版本：`0.3.0`（拟，具体以发布策略为准）
+> 目标版本：`0.3.0`（已交付）
 > 状态：已实现；独立 profile 的 API / catalog / runtime 已验证，Web UI 交互待验收
 > 最后更新：2026-11-19
 > 验证基线：DeepSeek Harness `0.2.2-rc.1`，Node `24.x`

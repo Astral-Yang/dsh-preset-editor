@@ -1,7 +1,7 @@
 # dsh-preset-editor 预设组成预览 — 推进计划
 
 > 分支：沿用 `feat/prompt-section-filter`
-> 目标版本：`0.4.0`（拟）
+> 目标版本：`0.3.0`（已随 0.3.0 交付）
 > 状态：已实现；真实 profile API/overlay 模拟已验证，Web UI 交互待验收
 > 最后更新：2026-11-19
 > 验证基线：DeepSeek Harness `0.2.2-rc.1`，Node `24.x`
