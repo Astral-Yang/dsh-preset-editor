@@ -4,7 +4,7 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { buildManagedBlock, extractManagedDefinitions, mergePatchText, parsePluginsYaml, validatePlugins } from '../lib/native.js'
+import { buildManagedBlock, extractManagedDefinitions, mergePatchText, parsePluginsYaml, validatePatchText, validatePlugins } from '../lib/native.js'
 import { PresetError } from '../lib/store.js'
 
 const plugins = `- id: persona
@@ -61,6 +61,92 @@ test('merge replaces an existing managed block in place', () => {
   const second = mergePatchText(first, buildManagedBlock({ b: { ...definition, configId: 'b', rowId: 'preset-b' } }))
   assert.doesNotMatch(second, /id: a\n/)
   assert.match(second, /id: preset-b/)
+})
+
+const imageGenRow = `# user comment: keep this row
+- id: image-gen
+  name: dsh-image-gen
+  config:
+    provider: openai-compat
+    note: |-
+      line one
+      line two
+    openaiCompatBaseURL: "https://api.example.com/v1"
+    disabled: !!js process.platform === 'win32'
+`
+const endMarker = '# <<< dsh-preset-editor managed presets'
+
+function blockWithImageGen(block) {
+  return block.replace(`${endMarker}\n`, `${imageGenRow}${endMarker}\n`)
+}
+
+test('merge moves non-managed rows out of the managed block and keeps them on repeated saves', () => {
+  const block = buildManagedBlock({ standard: definition })
+  const existing = `# profile header\n- id: other\n  name: other-plugin\n\n${blockWithImageGen(block)}`
+  const first = mergePatchText(existing, block)
+  const begin = first.indexOf('# >>> dsh-preset-editor managed presets')
+  const end = first.indexOf(endMarker)
+  const image = first.indexOf('- id: image-gen')
+  assert.ok(begin >= 0 && end > begin)
+  assert.ok(image > end, 'image-gen must be outside the managed block')
+  assert.equal((first.match(/- id: image-gen/g) || []).length, 1)
+  assert.match(first, /# user comment: keep this row/)
+  assert.match(first, /note: \|-\n      line one\n      line two/)
+  assert.match(first, /openaiCompatBaseURL: "https:\/\/api\.example\.com\/v1"/)
+  assert.match(first, /!!js process\.platform/)
+  assert.doesNotThrow(() => validatePatchText(first))
+
+  const second = mergePatchText(first, block)
+  assert.equal((second.match(/- id: image-gen/g) || []).length, 1)
+  assert.ok(second.indexOf('- id: image-gen') > second.indexOf(endMarker))
+  assert.doesNotThrow(() => validatePatchText(second))
+
+  const withRoot = mergePatchText(`[]\n${blockWithImageGen(block)}`, block)
+  assert.doesNotThrow(() => validatePatchText(withRoot))
+  assert.equal((withRoot.match(/- id: image-gen/g) || []).length, 1)
+})
+
+test('two preset saves update the block without losing non-managed rows', () => {
+  const firstBlock = buildManagedBlock({ a: { ...definition, configId: 'a', rowId: 'preset-a' } })
+  const secondBlock = buildManagedBlock({ b: { ...definition, configId: 'b', rowId: 'preset-b' } })
+  const first = mergePatchText(blockWithImageGen(firstBlock), firstBlock)
+  const second = mergePatchText(first, secondBlock)
+  assert.equal((second.match(/- id: image-gen/g) || []).length, 1)
+  assert.doesNotMatch(second, /id: preset-a/)
+  assert.match(second, /id: preset-b/)
+  assert.ok(second.indexOf('- id: image-gen') > second.indexOf(endMarker))
+})
+
+test('removing the managed block keeps non-managed rows inside it', () => {
+  const block = buildManagedBlock({ standard: definition })
+  const existing = blockWithImageGen(block)
+  const cleaned = mergePatchText(existing, '')
+  assert.doesNotMatch(cleaned, /# >>> dsh-preset-editor managed presets/)
+  assert.doesNotMatch(cleaned, /# <<< dsh-preset-editor managed presets/)
+  assert.equal((cleaned.match(/- id: image-gen/g) || []).length, 1)
+  assert.match(cleaned, /# user comment: keep this row/)
+  assert.doesNotThrow(() => validatePatchText(cleaned))
+})
+
+test('mixed insert rows preserve non-preset children', () => {
+  const mixed = `# >>> dsh-preset-editor managed presets — do not edit this block manually
+- insert:
+    - id: preset-standard
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: standard
+        plugins: []
+    - id: image-gen
+      name: dsh-image-gen
+      config:
+        provider: openai-compat
+# <<< dsh-preset-editor managed presets
+`
+  const replacement = buildManagedBlock({ standard: definition })
+  const merged = mergePatchText(mixed, replacement)
+  assert.equal((merged.match(/- id: image-gen/g) || []).length, 1)
+  assert.ok(merged.indexOf('- id: image-gen') > merged.indexOf(endMarker))
+  assert.doesNotThrow(() => validatePatchText(merged))
 })
 
 test('invalid compositions are rejected', () => {
@@ -175,6 +261,44 @@ test('NativePresetManager writes a managed profile patch block and resets it', a
   }
 })
 
+test('native manager save and reset preserve non-managed rows in the existing block', async () => {
+  const { NativeStore, NativePresetManager } = await import('../lib/native.js')
+  const dir = await mkdtemp(join(tmpdir(), 'dspm-native-managed-row-'))
+  try {
+    const patchPath = join(dir, 'cordis.patch.yml')
+    await writeFile(patchPath, blockWithImageGen(buildManagedBlock({ standard: definition })))
+    const store = new NativeStore({ file: join(dir, 'native.json'), limits: { maxPresets: 10, maxPersonaChars: 1000, maxSessionAssignments: 10 }, logger: { info() {}, warn() {}, error() {}, debug() {} } })
+    store.loadSync()
+    const fake = {
+      get(name) {
+        if (name === 'profileContext') return { patchPath }
+        if (name === 'agentPresets') return {
+          defaultId: 'standard',
+          async list() { return [{ id: 'standard', name: 'standard', description: '', order: 1 }] },
+          async readDocument() { return { agentPreset: 'standard', content: plugins } },
+        }
+        if (name === 'loader') return { entries: () => [{ options: { id: 'preset-standard', name: '@deepseek-ai/dsh-agent-preset', config: { id: 'standard' } } }] }
+        return undefined
+      },
+      on() {},
+    }
+    const native = new NativePresetManager({ ctx: fake, store, logger: { info() {}, warn() {}, error() {}, debug() {} }, config: {} })
+    await native.save({ id: 'standard', name: 'Standard after save', pluginsYaml: plugins }, 0)
+    let text = await readFile(patchPath, 'utf8')
+    assert.equal((text.match(/- id: image-gen/g) || []).length, 1)
+    assert.ok(text.indexOf('- id: image-gen') > text.indexOf(endMarker))
+
+    await native.reset('standard', store.generation)
+    text = await readFile(patchPath, 'utf8')
+    assert.doesNotMatch(text, /# >>> dsh-preset-editor managed presets/)
+    assert.doesNotMatch(text, /# <<< dsh-preset-editor managed presets/)
+    assert.equal((text.match(/- id: image-gen/g) || []).length, 1)
+    assert.doesNotThrow(() => validatePatchText(text))
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
 test('automatic backups record native state and profile patch before writes', async () => {
   const { NativeStore, NativePresetManager, backupText } = await import('../lib/native.js')
   const dir = await mkdtemp(join(tmpdir(), 'dspm-native-backup-'))
@@ -223,7 +347,7 @@ test('repairOrphans moves a managed new preset from a direct row to insert', asy
   try {
     const patchPath = join(dir, 'cordis.patch.yml')
     const broken = { ...definition, configId: 'test1', rowId: 'preset-test1', mode: 'override', name: 'Test 1' }
-    await writeFile(patchPath, `[]\n${buildManagedBlock({ test1: broken })}`)
+    await writeFile(patchPath, `[]\n${blockWithImageGen(buildManagedBlock({ test1: broken }))}`)
     const store = new NativeStore({ file: join(dir, 'native.json'), limits: { maxPresets: 10, maxPersonaChars: 1000, maxSessionAssignments: 10 }, logger: { info() {}, warn() {}, error() {}, debug() {} } })
     store.loadSync()
     await store.transact((draft) => { draft.definitions.test1 = broken })
@@ -243,6 +367,9 @@ test('repairOrphans moves a managed new preset from a direct row to insert', asy
     const text = await readFile(patchPath, 'utf8')
     assert.match(text, /- insert:/)
     assert.match(text, /id: test1/)
+    assert.equal((text.match(/- id: image-gen/g) || []).length, 1)
+    assert.ok(text.indexOf('- id: image-gen') > text.indexOf(endMarker))
+    assert.doesNotThrow(() => validatePatchText(text))
   } finally {
     await rm(dir, { recursive: true, force: true })
   }
@@ -298,11 +425,13 @@ test('restoreBackup rolls a patch or native snapshot back with new backups', asy
     const backupDir = join(dir, 'backups')
     await (await import('node:fs/promises')).mkdir(backupDir, { recursive: true })
     const restoredDef = { ...definition, configId: 'test1', rowId: 'preset-test1', mode: 'create', name: 'Restored' }
-    const backupPatch = `# snapshot\n${buildManagedBlock({ test1: restoredDef })}`
+    const backupPatch = `# snapshot\n${blockWithImageGen(buildManagedBlock({ test1: restoredDef }))}`
     await writeFile(join(backupDir, 'patch-test.yml'), backupPatch)
     const patchResult = await native.restoreBackup('patch-test.yml')
     assert.equal(patchResult.application, 'restart-required')
-    assert.equal(extractManagedDefinitions(await readFile(patchPath, 'utf8')).test1.mode, 'create')
+    let restoredText = await readFile(patchPath, 'utf8')
+    assert.equal(extractManagedDefinitions(restoredText).test1.mode, 'create')
+    assert.equal((restoredText.match(/- id: image-gen/g) || []).length, 1)
     assert.equal(store.getState().definitions.test1.mode, 'create')
 
     const snapshot = { version: 1, generation: 1, definitions: { standard: definition }, overlays: { standard: { tools: { mode: 'all', allow: [], deny: [] }, enabled: true } } }
@@ -310,7 +439,9 @@ test('restoreBackup rolls a patch or native snapshot back with new backups', asy
     const nativeResult = await native.restoreBackup('native-test.json')
     assert.equal(nativeResult.application, 'restart-required')
     assert.equal(store.getState().definitions.standard.mode, 'override')
-    assert.match(await readFile(patchPath, 'utf8'), /id: preset-standard/)
+    restoredText = await readFile(patchPath, 'utf8')
+    assert.match(restoredText, /id: preset-standard/)
+    assert.equal((restoredText.match(/- id: image-gen/g) || []).length, 1)
   } finally {
     await rm(dir, { recursive: true, force: true })
   }
