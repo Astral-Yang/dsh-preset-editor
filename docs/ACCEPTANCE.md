@@ -1,8 +1,8 @@
 # 验收报告 — dsh-preset-editor（原生 Agent preset 融合版）
 
-> 版本：0.3.0
+> 版本：0.3.1
 > 验证环境：DeepSeek Harness `0.2.2-rc.1`，Node `24.x`，Linux 容器
-> 报告时间：2026-11-19
+> 报告时间：2026-11-24
 > 结论：**原生预设列表、编辑、新增、恢复、逐工具过滤、提示词段过滤、组成预览与真实 UI 均通过验证；未执行项在第 8 节明确列出。**
 
 ---
@@ -14,7 +14,7 @@
 | 可安装插件项目 | ✅ `package.json` / `cordis.patch.yml` / `lib/*` |
 | 原生 preset 列表/编辑/新增/恢复 | ✅ 已在真实 profile 验证 |
 | 逐工具过滤叠加 | ✅ 真实 Agent probe 验证 |
-| 自动化测试 | ✅ 83/83 通过 |
+| 自动化测试 | ✅ 88/88 通过 |
 | 真实 Web Profile + Chrome UI | ✅ 已截图 |
 | 文档 | ✅ README / REQUIREMENTS / ACCEPTANCE |
 
@@ -402,10 +402,11 @@ curl -b cookies "$BASE/api/preset-editor/native?catalog=1"
 
 ## 11. 最终交付状态
 
-- ✅ 原生 preset 列表/编辑/新增/恢复/过滤、提示词段过滤与组成预览，真实 profile + API + UI 验证（0.3.0 范围）。
-- ✅ 83/83 自动测试（0.3.0 范围）。
+- ✅ 原生 preset 列表/编辑/新增/恢复/过滤、提示词段过滤与组成预览，真实 profile + API + UI 验证（0.3.0 功能范围）。
+- ✅ 0.3.1 托管块回归：真实 profile patch 只读验证 `image-gen` 保留，88/88 自动测试通过。
+- ✅ 83/83 自动测试（0.3.0 范围）；后续新增回归用例后总计 88/88。
 - ✅ 文档与截图。
 - ⚠️ 第 8 节未执行项已明确，不伪装为通过。
-- 版本 `0.3.0`，目标 DSH `0.2.2-rc.1`。
+- 版本 `0.3.1`，目标 DSH `0.2.2-rc.1`。
 - 提示词段过滤：新增 8 个自动化用例，真实 `dsh-expression:companion` 已验证。
 - 组成预览：preview API/UI/测试已交付，真实 profile API 与 overlay 模拟已验证；浏览器内 UI 交互截图仍待执行（见第 8 节）。

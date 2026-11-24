@@ -2,7 +2,7 @@
 
 把 **DeepSeek Harness（DSH）原生 Agent preset** 变成可直接编辑的可视化对象：在同一份 roster 中查看 `standard`、`ptc`、`minimal`、`cordis` 以及自定义 preset，编辑它们的人格与插件组合，新增原生 preset，并可为每个原生 preset 附加逐工具过滤与系统提示词段过滤，查看最终组成预览。
 
-> 当前版本：0.3.0（2026-11-19）
+> 当前版本：0.3.1（2026-11-24）
 
 - **不再维护一套平行预设列表**：列表直接来自 `ctx.agentPresets`，与官方 Agent preset 选择器、Session header、`/permission` 等原生机制共用同一身份。
 - **编辑/新增写入 profile patch**：托管块写入 `cordis.patch.yml`，由 DSH HMR 实时重组；无 HMR 的部署返回“需重启”。
@@ -29,7 +29,7 @@
 | HMR 实时重组 | ✅ | patch 写入后等待 roster 更新；超时回滚 |
 | 无 HMR 部署 | ✅ | 返回 `restart-required`，不伪装成立即生效 |
 | 真实 Web UI | ✅ | 左侧「预设管理」；真实实例已截图验收 |
-| 测试 | ✅ | 83 个测试（含真实 Harness prompt/tool/preview 覆盖） |
+| 测试 | ✅ | 88 个测试（含真实 Harness prompt/tool/preview 覆盖） |
 
 已验证 DSH：`@deepseek-ai/dsh@0.2.2-rc.1`，Node `24.x`。
 

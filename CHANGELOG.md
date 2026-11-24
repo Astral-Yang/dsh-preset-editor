@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1 — 2026-11-24
+
+- 修复保存、重置、孤儿修复或恢复原生 preset 时，重写 `cordis.patch.yml` 托管块会误删其他插件配置行的问题。DSH config editor 会把新配置追加在 `# <<< dsh-preset-editor managed presets` 之前，旧实现只重建 `@deepseek-ai/dsh-agent-preset` 行，导致 `dsh-image-gen` 的模型与 API 地址在每次保存后丢失。
+- `mergePatchText()` 现在解析旧托管块：保留非 `@deepseek-ai/dsh-agent-preset` 顶层条目并迁移到 END 标记之外；从混合 `- insert:` 中拆出非 preset 子条目；保留注释、引号、`!!js` 和 block scalar。空托管块会删除标记但保留这些行，并兼容 `[]` 根节点。
+- 新增回归测试覆盖 image-gen 位于块内时的连续保存、空块、mixed insert，以及 `NativePresetManager` save/reset/repairOrphans/restoreBackup 路径；自动化测试 88 / 88 通过。
+
 ## 0.3.0 — 2026-11-19
 
 - 新增每个原生 preset 的「组成预览」：展示预设组装后的提示词段、静态运行时上下文、变量、工具声明，以及工具过滤后的可见 / 隐藏工具。
